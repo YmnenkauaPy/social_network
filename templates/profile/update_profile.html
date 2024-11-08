@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div>
+    
+</div>
+<form method="POST" action = "{% url 'update_profile' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if user.profile_picture %}
+        <img src="{{ user.profile_picture.url }}" alt="current profile_picture" style="max-width: 200px;"><br><br>
+    {% endif %}
+    <div>
+        <label for="id_media">
+            Upload Profile Picture
+        </label>
+        <input type="file" name="profile_picture" id="id_media">
+    </div>
+    <p>Username: <textarea name="username">{{ user.username }}</textarea></p>
+    <p>Details: <textarea name="details">{{ user.details }}</textarea></p>
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}

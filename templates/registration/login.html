@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="border: 1px solid black; padding: 10px 50px; position: absolute; top: 50%; left: 50%; 
+text-align: center; transform: translate(-50%, -50%); display: flex; flex-direction: column; height: 400px;">
+    <h2 style="margin: 0;">Login</h2>
+    <br><br><br><br>
+    <form method="post" style="flex: 1; display: flex; flex-direction: column; justify-content: center; margin-top: 10px;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" style="margin-top: auto;">Login</button>
+    </form>
+</div>
+{% endblock %}

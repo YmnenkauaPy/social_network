@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<p>Username: {{ custom_user.username }}</p>
+{% if custom_user.profile_picture %}
+    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" width="180px"/>
+{% endif %}
+<p>Details: {{ custom_user.details }}</p>
+<p>Data joined: {{ custom_user.date_joined }}</p>
+<p>Followers: {{ custom_user.followers.count }}</p>
+<p>Friends: {{ custom_user.friends.count }}</p>
+<p>Followings: {{ custom_user.followings.count }}</p>
+
+{% if custom_user.id == user.id %}
+    <form method="POST" action = "{% url 'update_profile' %}">
+        {% csrf_token %}
+        <button>Change profile details</button>
+    </form>
+{% endif %}
+{% if custom_user.id == user.id %}
+    <form method="GET" action = "{% url 'delete_profile' user.id %}">
+        {% csrf_token %}
+        <button>Delete account</button>
+    </form>
+{% endif %}
+<!-- content -->
+{% endblock %}
