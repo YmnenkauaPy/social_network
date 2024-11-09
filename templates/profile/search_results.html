@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div>
+    <h2>{{type}}</h2>
+    {% for custom_user in users.all %}
+        <a href="{% url 'profile' custom_user.id %}">{{custom_user.username}}</a>
+        <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
+            {% csrf_token %}
+            {% if custom_user.id != user.id %}
+                <button type="submit" class="follow-btn">{% if custom_user in user.followings.all %}Unfollow{% else %}Follow{% endif %}</button>
+            {% endif %}
+        </form>
+        <br>
+    {% empty %}
+        <p>No one was found</p>
+    {% endfor %}
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const followForms = document.querySelectorAll('.follow-form');
+    
+        followForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+    
+                const url = this.getAttribute('action');
+                const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        const button = this.querySelector('.follow-btn');
+                        if (data.follow_status === 'followed') {
+                            button.textContent = 'Unfollow';
+                        } else if (data.follow_status === 'unfollowed') {
+                            button.textContent = 'Follow';
+                        }
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Request failed', error);
+                });
+            });
+        });
+    });
+</script>    
+{% endblock %}
