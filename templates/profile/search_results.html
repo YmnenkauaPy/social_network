@@ -1,32 +1,40 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div>
-    <h2>{{type}}</h2>
+<div class="user-list-container">
+    <h2>{{ type }}</h2>
     {% for custom_user in users.all %}
-        <a href="{% url 'profile' custom_user.id %}">{{custom_user.username}}</a>
-        <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
-            {% csrf_token %}
-            {% if custom_user.id != user.id %}
-                <button type="submit" class="follow-btn">{% if custom_user in user.followings.all %}Unfollow{% else %}Follow{% endif %}</button>
-            {% endif %}
-        </form>
-        <br>
+        <div class="user-item">
+            <a class="user-link" href="{% url 'profile' custom_user.id %}">{{ custom_user.username }}</a>
+            <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
+                {% csrf_token %}
+                {% if custom_user.id != user.id %}
+                    <button type="submit" class="follow-btn">
+                        {% if custom_user in user.followings.all %}
+                            Unfollow
+                        {% else %}
+                            Follow
+                        {% endif %}
+                    </button>
+                {% endif %}
+            </form>
+        </div>
     {% empty %}
-        <p>No one was found</p>
+        <p>No users were found.</p>
     {% endfor %}
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const followForms = document.querySelectorAll('.follow-form');
-    
+
         followForms.forEach(form => {
             form.addEventListener('submit', function(event) {
                 event.preventDefault();
-    
+
                 const url = this.getAttribute('action');
                 const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -38,11 +46,7 @@
                 .then(data => {
                     if (data.status === 'ok') {
                         const button = this.querySelector('.follow-btn');
-                        if (data.follow_status === 'followed') {
-                            button.textContent = 'Unfollow';
-                        } else if (data.follow_status === 'unfollowed') {
-                            button.textContent = 'Follow';
-                        }
+                        button.textContent = (data.follow_status === 'followed') ? 'Unfollow' : 'Follow';
                     } else {
                         console.error('Error:', data.message);
                     }
@@ -53,5 +57,52 @@
             });
         });
     });
-</script>    
+</script>
+
+<style>
+    .user-list-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.user-item:last-child {
+    border-bottom: none;
+}
+
+.user-link {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+}
+
+.user-link:hover {
+    text-decoration: underline;
+}
+
+.follow-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.follow-btn:hover {
+    background-color: #0056b3;
+}
+</style>
 {% endblock %}

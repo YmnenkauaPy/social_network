@@ -1,7 +1,7 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views
-from authentication import views
+from posts import views
 
-# urlpatterns = [
-#     path(''),
-# ]
+urlpatterns = [
+    path('create/post/', views.create_post, name='create_post'),
+    path('view/post/<int:post_id>', views.view_post, name='view_post'),
+]

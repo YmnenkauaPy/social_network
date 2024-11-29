@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from posts.models import Post
+from django.apps import apps  
 
 class CustomUser(AbstractUser):
     details = models.CharField(max_length=100, default='')
@@ -9,4 +10,14 @@ class CustomUser(AbstractUser):
     friends = models.ManyToManyField('self', symmetrical=False, related_name='friends_of_user', blank=True)
     followings = models.ManyToManyField('self', symmetrical=False, related_name='followings_of_user', blank=True)
     followers = models.ManyToManyField('self', symmetrical=False, related_name='followers_of_user', blank=True)
+    is_online = models.BooleanField(default=False)
+    last_activity = models.DateTimeField(null=True, blank=True)
+
+    def unread_notifications_count(self):
+        Notification = apps.get_model('notifications', 'Notification') 
+        return Notification.objects.filter(
+            receiver=self,
+            read=False
+        ).count()
+    
     #обкладинка

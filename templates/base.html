@@ -3,7 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <title>Social Network</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .nav-link {
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            transition: background-color 0.3s, color 0.3s;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .nav-item {
+            list-style: none;
+            margin: 0 5px;
+        }
+
+        input[type="text"] {
+            padding: 5px;
+            border: none;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #a5cff9;
+            color: #007bff;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        button:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 3px 6px;
+            font-size: 12px;
+        }
+
+        .profile-img {
+            width: 47px;
+            height: 47px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-img-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 100%;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            margin: 0 10px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .navbar-nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-link {
+                width: 100%;
+                text-align: left;
+            }
+
+            li {
+                margin: 5px 0;
+            }
+        }
+    </style>
 </head>
 <body>
     {% load static %}
@@ -12,7 +120,7 @@
             <ul class="navbar-nav ml-auto">
                 <li>
                     {% if user.is_authenticated %}
-                        <form method="GET" action="{% url 'search_for_users' %}">
+                        <form method="GET" action="{% url 'search_for_users' %}" style="display: inline;">
                             <input name="search" type="text" placeholder="Search users..." autocomplete="off">
                             <button type="submit">Search</button>
                         </form>
@@ -24,29 +132,44 @@
                 {% if user.is_authenticated %}
                     <li class="nav-item">
                         <span class="nav-link">Hello, {{ user.username }}!</span>
-                        
                     </li>
-                    {% if user.profile_picture %}
-                        <li style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0;">
-                            <img src="{{ user.profile_picture.url }}" style="width: 50px; height: 50px; object-fit: cover;">
-                        </li>
-                    {% else %}
-                        <li style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0;">
-                            <img src="{% static 'images/None.png' %}" style="width: 50px; height: 50px; object-fit: cover;">
-                        </li>
-                    {% endif %}
-                    <li class="nav-item">
-                        <form action="{% url 'logout' %}" method="post">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link">Logout</button>
-                        </form>
+                    <li class="nav-item profile-img-container">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" class="profile-img">
+                        {% else %}
+                            <img src="{% static 'images/None.png' %}" class="profile-img">
+                        {% endif %}
                     </li>
                     <li class="nav-item">
-                        <form action="{% url 'profile' user.id %}" method="post">
+                        <form action="{% url 'profile' user.id %}" method="post" style="display: inline;">
                             {% csrf_token %}
                             <button type="submit" class="nav-link">Profile</button>
                         </form>
                     </li>
+                    <li class="nav-item">
+                        <form action="{% url 'notifications' user.id %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link">
+                                Notifications
+                                {% if unread > 0 %}
+                                    <span class="badge badge-danger">{{ unread }}</span>
+                                {% endif %}
+                            </button>
+                        </form>
+                    </li>                
+                    <li class="nav-item">
+                        <form action="{% url 'create_post' %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link">Create Post</button>
+                        </form>
+                    </li>    
+                    <li class="nav-item">
+                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link">Logout</button>
+                        </form>
+                    </li>
+                    
                 {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'login' %}">Login</a>
@@ -55,15 +178,24 @@
                         <a class="nav-link" href="{% url 'register' %}">Register</a>
                     </li>
                 {% endif %}
-                
             </ul>
         </div>
     </nav>
     
-    
     {% block content %}
     {% endblock %}
     
+    <script>
+        function fetchUnreadCount() {
+            fetch('/count/unread/notifications/') 
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('unread-count').textContent = data.unread_count;
+                });
+        }
 
+        setInterval(fetchUnreadCount, 60000);
+    </script>
+    
 </body>
 </html>

@@ -19,4 +19,51 @@
     <p>Details: <textarea name="details">{{ user.details }}</textarea></p>
     <button type="submit">Submit</button>
 </form>
+<style>
+.update-profile-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.current-picture {
+    text-align: center;
+}
+
+.current-profile-image {
+    max-width: 200px;
+    border-radius: 8px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-input, .form-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Ensures padding is included in total width */
+}
+
+.form-textarea {
+    resize: vertical; /* Allows vertical resizing of textarea */
+}
+
+</style>
 {% endblock %}

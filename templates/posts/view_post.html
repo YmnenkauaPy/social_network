@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load custom_tags %}
+<h2>{{ post.name }}</h2>
+{% if post.content %}
+    <div class="post-content mb-2">
+    {% if post.content.url|endswith:".jpg" or post.content.url|endswith:".png" or post.content.url|endswith:".jpeg" %}
+        <img src="{{ post.content.url }}" alt="img" style="max-width: 500px;">
+    {% elif post.media.url|endswith:".mp4" %}
+        <video width="320" height="240" controls>
+            <source src="{{ post.content.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    {% else %}
+        <a href="{{ post.content.url }}">Download file</a>
+    {% endif %}
+    </div>
+{% elif post.link %}
+    {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
+        {% with post.link|extract_youtube_id as video_id %}
+            {% if video_id %}
+                <div>
+                    <iframe width="100%" height="150" src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allowfullscreen></iframe>
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% else %}
+        <p>follow<a href="{{ post.link }}">{{ post.link }}</a></p>
+    {% endif %}
+{% endif %}
+<p><b>{{ post.creator }}</b>  {% if post.description %}{{ post.description }}{% endif %}</p>
+
+{% endblock %}

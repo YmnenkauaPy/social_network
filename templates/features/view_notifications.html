@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="notifications-container">
+    <h1>Notifications for {{ custom_user.username }}</h1>
+
+    {% if notifications.exists %}
+        <ul class="notification-list">
+            {% for notification in notifications.all %}
+                <li class="notification-item">
+                    <div class="notification-details">
+                        <h3>{{ notification.name }}</h3>
+                        <p>{{ notification.description }}</p>    
+                        <small>{{ notification.created_at }}</small>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No notifications found.</p>
+    {% endif %}
+</div>
+
+<style>
+    .notifications-container {
+        margin: 20px auto;
+        padding: 20px;
+        max-width: 800px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .notification-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    .notification-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+    .notification-details h3 {
+        margin: 0 0 5px;
+        font-size: 18px;
+    }
+    .notification-details p {
+        margin: 5px 0;
+    }
+    .notification-status {
+        margin-top: 10px;
+        font-style: italic;
+        font-size: 14px;
+    }
+    .status-read {
+        color: green;
+    }
+    .status-unread {
+        color: red;
+    }
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f7f8;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .form-container {
+        border: 1px solid black;
+        padding: 20px;
+        position: relative;
+        max-width: 400px;
+        margin: 50px auto; /* Center vertically with a margin */
+        text-align: center;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+
+    .form-container h2 {
+        margin-bottom: 20px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .notifications-container {
+        margin: 20px auto;
+        padding: 20px;
+        max-width: 800px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+
+    .notification-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .notification-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+
+    .notification-details h3 {
+        margin: 0 0 5px;
+        font-size: 18px;
+    }
+
+    .notification-details p {
+        margin: 5px 0;
+    }
+
+    .notification-status {
+        margin-top: 10px;
+        font-style: italic;
+        font-size: 14px;
+    }
+
+    .status-read {
+        color: green;
+    }
+
+    .status-unread {
+        color: red;
+    }
+
+    /* Responsive styles */
+    @media (max-width: 768px) {
+        .form-container {
+            width: 90%;
+            padding: 10px;
+        }
+    }
+</style>
+{% endblock %}

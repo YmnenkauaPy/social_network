@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form action="{% url 'create_post' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <h2>Create Post</h2>
+    
+    <div>
+        <label for="id_name">Name:</label>
+        <input type="text" name="name" id="id_name" required>
+    </div>
+
+    <div>
+        <label for="id_name">Description:</label>
+        <input type="text" name="description" id="id_desciption" required>
+    </div>
+
+    <div>
+        <button type="button" class="toggle-btn" id="showFiles">Files</button>
+        <button type="button" class="toggle-btn" id="showLink">Links</button>
+    </div>
+
+    <div id="fileUploadSection" style="display:block;">
+        <label for="id_content">Upload File:</label>
+        <input type="file" name="content" id="id_content">
+    </div>
+
+    <div id="LinkSection" style="display:none;">
+        <label for="id_link">Link:</label>
+        <input type="url" name="link" id="id_link" placeholder="Enter URL">
+    </div>
+
+    <button type="submit">Create</button>
+</form>
+<a href="{% url 'profile' user.id %}">return to profile</a>
+
+<script>
+    document.getElementById('showFiles').onclick = function() {
+        document.getElementById('fileUploadSection').style.display = 'block';
+        document.getElementById('LinkSection').style.display = 'none';
+
+        setActiveButton(this);
+    }
+
+    document.getElementById('showLink').onclick = function() {
+        document.getElementById('LinkSection').style.display = 'block';
+        document.getElementById('fileUploadSection').style.display = 'none';
+
+        setActiveButton(this);
+    }
+
+    function setActiveButton(button) {
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+
+
+        button.classList.add('active');
+    }
+</script>
+
+<style>
+.toggle-btn {
+    background-color: lightgray;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.toggle-btn.active {
+    background-color: blue;
+    color: white;}
+</style>
+{% endblock %}

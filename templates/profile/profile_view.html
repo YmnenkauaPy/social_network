@@ -1,27 +1,156 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<p>Username: {{ custom_user.username }}</p>
-{% if custom_user.profile_picture %}
-    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" width="180px"/>
-{% endif %}
-<p>Details: {{ custom_user.details }}</p>
-<p>Data joined: {{ custom_user.date_joined }}</p>
-<a href="{% url 'related_users' custom_user.id 'followers' %}">Followers: {{ custom_user.followers.count }}</a>
-<a href="{% url 'related_users' custom_user.id 'friends' %}">Friends: {{ custom_user.friends.count }}</a>
-<a href="{% url 'related_users' custom_user.id 'followings' %}">Followings: {{ custom_user.followings.count }}</a>
+<div class="profile-container">
+    <div class="profile-head">
+        <h2>{{ custom_user.username }}</h2>
+        {% if custom_user.profile_picture %}
+            <div class="profile-image-container">
+                <img src="{{ custom_user.profile_picture.url }}" alt="Profile Picture" class="profile-picture"/>
+            </div>
+        {% endif %}
+    </div> <!-- .profile-head -->
+    
+    <p class="status">{{ online }}</p>
+    <p>Details: {{ custom_user.details }}</p>
+    <p>Data joined: {{ custom_user.date_joined }}</p>
 
-{% if custom_user.id == user.id %}
-    <form method="POST" action = "{% url 'update_profile' %}">
-        {% csrf_token %}
-        <button>Change profile details</button>
-    </form>
-{% endif %}
-{% if custom_user.id == user.id %}
-    <form method="GET" action = "{% url 'delete_profile' user.id %}">
-        {% csrf_token %}
-        <button>Delete account</button>
-    </form>
-{% endif %}
-<!-- content -->
+    <div class="user-stats">
+        <a href="{% url 'related_users' custom_user.id 'followers' %}">Followers: {{ custom_user.followers.count }}</a>
+        <a href="{% url 'related_users' custom_user.id 'friends' %}">Friends: {{ custom_user.friends.count }}</a>
+        <a href="{% url 'related_users' custom_user.id 'followings' %}">Followings: {{ custom_user.followings.count }}</a>
+    </div>
+
+    {% if custom_user.id != user.id %}
+        <form method="POST" action="{% url 'follow_user' custom_user.id %}" class="follow-form" data-user-id="{{ custom_user.id }}">
+            {% csrf_token %}
+            <button type="submit" class="follow-btn">
+                {% if custom_user in user.followings.all %}
+                    Unfollow
+                {% else %}
+                    Follow
+                {% endif %}
+            </button>
+        </form>
+    {% endif %}
+
+    {% if custom_user.id == user.id %}
+        <div class="user-actions">
+            <form method="POST" action="{% url 'update_profile' %}">
+                {% csrf_token %}
+                <button class="action-btn">Change profile details</button>
+            </form>
+            <form method="GET" action="{% url 'delete_profile' user.id %}">
+                {% csrf_token %}
+                <button class="action-btn delete-btn">Delete account</button>
+            </form>
+        </div>
+    {% endif %}
+
+    {% for post in posts %}
+        {% if post.content %}
+            <form action="{% url 'view_post' post.id %}">
+                <button><img width="100" height="100" src="{{ post.content.url }}">
+                <p>{{post.name}}</p></button>
+            </form>
+        {% endif %}
+    {% empty %}
+        <p>No posts on this page.</p>
+    {% endfor %}
+</div>
+
+<style>
+.profile-container {
+    max-width: 600px; /* Optional: limit the width of the profile container */
+    margin: 0 auto; /* Center the container */
+    padding: 20px; /* Add some padding */
+}
+
+.profile-head {
+    display: flex; /* Enable flexbox */
+    align-items: center; /* Align items vertically centered */
+    margin-bottom: 20px; /* Space between header and the rest */
+}
+
+.profile-image-container {
+    width: 100px; /* Set the width */
+    height: 100px; /* Set the height */
+    overflow: hidden; /* Hide overflow */
+    border-radius: 8px; /* Rounded corners */
+    position: relative; /* Position relative for image positioning */
+    margin-right: 15px; /* Space between the image and text */
+}
+
+.profile-picture {
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    width: auto; 
+    height: 100%; 
+    transform: translate(-50%, -50%); 
+    object-fit: cover; 
+}
+
+.status {
+    font-style: italic;
+    color: #666;
+}
+
+.user-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+}
+
+.user-stats a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+}
+
+.user-stats a:hover {
+    text-decoration: underline;
+}
+
+.follow-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.follow-btn:hover {
+    background-color: #0056b3;
+}
+
+.user-actions {
+    margin-top: 20px;
+}
+
+.action-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 5px; 
+}
+
+.action-btn:hover {
+    background-color: #5a6268;
+}
+
+.delete-btn {
+    background-color: #dc3545; 
+}
+
+.delete-btn:hover {
+    background-color: #c82333; 
+}
+</style>
 {% endblock %}
