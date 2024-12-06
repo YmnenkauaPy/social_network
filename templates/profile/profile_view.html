@@ -46,18 +46,17 @@
             </form>
         </div>
     {% endif %}
-
-    {% for post in posts %}
-        {% if post.content %}
-            <form action="{% url 'view_post' post.id %}">
-                <button><img width="100" height="100" src="{{ post.content.url }}">
-                <p>{{post.name}}</p></button>
-            </form>
-        {% endif %}
-    {% empty %}
-        <p>No posts on this page.</p>
-    {% endfor %}
 </div>
+{% for post in posts %}
+    {% if post.content %}
+        <form action="{% url 'post_detail' post.id %}">
+            <button><img width="100" height="100" src="{{ post.content.url }}">
+            <p>{{post.name}}</p></button>
+        </form>
+    {% endif %}
+{% empty %}
+    <p>No posts on this page.</p>
+{% endfor %}
 
 <style>
 .profile-container {

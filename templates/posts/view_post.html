@@ -2,6 +2,8 @@
 
 {% block content %}
 {% load custom_tags %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <h2>{{ post.name }}</h2>
 {% if post.content %}
     <div class="post-content mb-2">
@@ -29,6 +31,141 @@
         <p>follow<a href="{{ post.link }}">{{ post.link }}</a></p>
     {% endif %}
 {% endif %}
-<p><b>{{ post.creator }}</b>  {% if post.description %}{{ post.description }}{% endif %}</p>
+<p><b>{{ post.creator }}</b> {% if post.description %}{{ post.description }}{% endif %}</p>
+{% for comment in comments %}
+    <div class="d-flex mb-2"></div>
+        <p><b>{{comment.creator}}</b><p id="comment_content" style="display:block">{{ comment.content }}</p><input type="text" name="content2" id="content2" style="display:none" value="{{comment.content}}"></p>  
+        <button 
+            type="button" id="{{ comment.id }}"
+            class="btn btn-sm {% if request.user in comment.like_to_comment.all %}btn-success{% else %}btn-outline-success{% endif %}" 
+            onclick="toggleLike(this.id)">
+            Like <span>{{ comment.like_to_comment.count }}</span>
+        </button>
+        {% if comment.creator == request.user %}
+            <button type="submit" id = "edit" class="btn btn-warning" style="margin-left: 5px; display:block;" onclick="Edit(this.id, {{ comment.id }})">Edit</button>
+            <button type="submit" id = "submit" class="btn btn-warning" style="margin-left: 5px; display:none;" onclick="Edit(this.id, {{ comment.id }})">Submit</button>
+            <button type="submit" id = "cancel" class="btn btn-secondary" style="margin-left: 5px; display:none;" onclick="Edit(this.id, {{ comment.id }})">Cancel</button>
 
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                Delete comment
+            </button>
+            
+            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteLabel">Confirm deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    Are you sure you want to delete this comment? You can't undo it.
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'comment_delete' comment.id %}" method="POST">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+        {% endif %}
+    </div>
+{% empty %}
+    <b>No comments</b>
+{% endfor %}
+<br>
+<form action="{% url 'post_detail' post.id %}" method="POST">
+    {% csrf_token %}
+    <input type="text" name="content" id="content" placeholder="Add comment...">
+    <button type="submit">Send</button>
+</form>
+
+<script>
+    async function toggleLike(commentId) { 
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const url = `{% url 'comment_like_toggle' 0 %}`.replace('0', commentId);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({}),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                const likeButton = document.getElementById(commentId);
+                likeButton.classList.toggle('btn-success', data.liked);
+                likeButton.classList.toggle('btn-outline-success', !data.liked);
+                likeButton.querySelector('span').textContent = data.likes_count;
+            }
+        } catch (error) {
+            console.error('Error during fetch operation:', error);
+        }
+    }
+
+    async function Edit(id, comment_id) {
+        var content = document.getElementById('comment_content')
+        var editing_content = document.getElementById("content2")
+
+        const edit = document.getElementById('edit')
+        const submit = document.getElementById('submit')
+        const cancel = document.getElementById('cancel')
+
+        if (id == 'edit') {
+            content.style.display = 'none'
+            editing_content.style.display = 'block'
+            cancel.style.display = 'block'
+            submit.style.display = 'block'
+            edit.style.display = 'none'
+
+
+        } else if (id == 'cancel') {
+            editing_content.style.display = 'none'
+            content.style.display = 'block'
+            cancel.style.display = 'none'
+            submit.style.display = 'none'
+            edit.style.display = 'block'
+
+        } else {
+            const url = `/edit/comment/${comment_id}/`
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ content: editing_content.value })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    content.textContent = data.content; 
+                    editing_content.style.display = 'none';
+                    content.style.display = 'block';
+                    cancel.style.display = 'none';
+                    submit.style.display = 'none';
+                    edit.style.display = 'block';
+       
+                } else {
+                    console.error('Error:', data.error);
+                }
+            } else {
+                console.error('Error with editing comment', response.status);
+            }
+
+        }
+    }
+
+    
+
+
+</script>
 {% endblock %}
