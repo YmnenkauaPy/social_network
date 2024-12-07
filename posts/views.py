@@ -16,8 +16,8 @@ def create_post(request):
 
         if not name:
             form.add_error('name', "You must provide a name for the post.")
-        if not (content or link):
-            form.add_error(None, "You must provide at least one type of content (file or link).")
+        if not (content or link or description):
+            form.add_error(None, "You must provide at least one type of content (file or link or description).")
 
         if form.is_valid():
             post = form.save(commit=False)
@@ -26,7 +26,7 @@ def create_post(request):
             post.creator = request.user
 
             post.save()
-            return redirect('view_post', post.id)
+            return redirect('post_detail', post.id)
         else:
             print(form.errors)
 

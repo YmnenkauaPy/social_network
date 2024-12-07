@@ -4,65 +4,6 @@
     <meta charset="UTF-8">
     <title>Social Network</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f8;
-            margin: 0;
-            padding: 0;
-        }
-
-        nav {
-            background-color: #007bff;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar-nav {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-        }
-
-        .nav-link {
-            color: white;
-            padding: 10px 15px;
-            text-decoration: none;
-            transition: background-color 0.3s, color 0.3s;
-            position: relative;
-        }
-
-        .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-        }
-
-        .nav-item {
-            list-style: none;
-            margin: 0 5px;
-        }
-
-        input[type="text"] {
-            padding: 5px;
-            border: none;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-
-        button {
-            background-color: #a5cff9;
-            color: #007bff;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            cursor: pointer;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        button:hover {
-            background-color: #007bff;
-            color: white;
-        }
-
         .badge {
             position: absolute;
             top: -5px;
@@ -82,105 +23,89 @@
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
-        .profile-img-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            border-radius: 100%;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            margin: 0 10px;
-        }
-
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .navbar-nav {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .nav-link {
-                width: 100%;
-                text-align: left;
-            }
-
-            li {
-                margin: 5px 0;
-            }
-        }
+        
     </style>
-</head>
-<body>
     {% load static %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <li>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="{% static 'js/scripts.js' %}"></script>
+    <script src="{% static 'js/datatables-simple-demo.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'assets/demo/chart-area-demo.js' %}"></script>
+    <script src="{% static 'assets/demo/chart-bar-demo.js' %}"></script>
+    
+</head>
+
+<body class="sb-nav-fixed">
+    {% load static %}
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{% url 'main' %}">Social Network</a>
+        <!-- Sidebar Toggle-->
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        <!-- Navbar Search-->
+        {% if user.is_authenticated %}
+            <form method="GET" action="{% url 'search_for_users' %}" class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+                <div class="input-group">
+                    <input class="form-control" name="search" type="text" placeholder="Search users..." aria-label="Search users..." autocomplete="off" aria-describedby="btnNavbarSearch" />
+                    <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
+        {% endif %}
+        <!-- Navbar-->
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" class="profile-img">
+                    {% else %}
+                        <img src="{% static 'images/None.png' %}" class="profile-img">
+                    {% endif %}  
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     {% if user.is_authenticated %}
-                        <form method="GET" action="{% url 'search_for_users' %}" style="display: inline;">
-                            <input name="search" type="text" placeholder="Search users..." autocomplete="off">
-                            <button type="submit">Search</button>
-                        </form>
-                    {% endif %}
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'main' %}">On main page</a>
-                </li>
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <span class="nav-link">Hello, {{ user.username }}!</span>
-                    </li>
-                    <li class="nav-item profile-img-container">
-                        {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" class="profile-img">
-                        {% else %}
-                            <img src="{% static 'images/None.png' %}" class="profile-img">
-                        {% endif %}
-                    </li>
-                    <li class="nav-item">
-                        <form action="{% url 'profile' user.id %}" method="post" style="display: inline;">
+                        <li><a class="dropdown-item" href="{% url 'profile' user.id %}">Profile</a></li>
+                        <li><form class="dropdown-item" action="{% url 'notifications' user.id %}" method="POST">
                             {% csrf_token %}
-                            <button type="submit" class="nav-link">Profile</button>
-                        </form>
-                    </li>
-                    <li class="nav-item">
-                        <form action="{% url 'notifications' user.id %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link">
+                            <button type="submit">
                                 Notifications
                                 {% if unread > 0 %}
                                     <span class="badge badge-danger">{{ unread }}</span>
                                 {% endif %}
                             </button>
-                        </form>
-                    </li>                
-                    <li class="nav-item">
-                        <form action="{% url 'create_post' %}" method="POST" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link">Create Post</button>
-                        </form>
-                    </li>    
-                    <li class="nav-item">
-                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link">Logout</button>
-                        </form>
-                    </li>
-                    
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register' %}">Register</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
+                        </form></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                    {% else %}
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="{% url 'register' %}">Register</a></li>
+                        <li><a class="dropdown-item" href="{% url 'login' %}">Login</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+        </ul>
     </nav>
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading"></div>
+                        <a class="nav-link" href="{% url 'main' %}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Home
+                        </a>
+                        <form class="nav-link" action="{% url 'create_post' %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit">Create Post</button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
     
     {% block content %}
     {% endblock %}

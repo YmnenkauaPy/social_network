@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% load custom_tags %}
 <div class="profile-container">
     <div class="profile-head">
         <h2>{{ custom_user.username }}</h2>
@@ -9,7 +10,7 @@
                 <img src="{{ custom_user.profile_picture.url }}" alt="Profile Picture" class="profile-picture"/>
             </div>
         {% endif %}
-    </div> <!-- .profile-head -->
+    </div> 
     
     <p class="status">{{ online }}</p>
     <p>Details: {{ custom_user.details }}</p>
@@ -50,8 +51,28 @@
 {% for post in posts %}
     {% if post.content %}
         <form action="{% url 'post_detail' post.id %}">
-            <button><img width="100" height="100" src="{{ post.content.url }}">
-            <p>{{post.name}}</p></button>
+            <button>
+            <b>{{post.name}}</b>
+            <img width="170" height="170" src="{{ post.content.url }}">
+            </button>
+        </form>
+    {% elif post.link %}
+        {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
+            {% with post.link|extract_youtube_id as video_id %}
+                {% if video_id %}
+                    <form action="{% url 'post_detail' post.id %}"><button><b>{{ post.name }}</b></button></form>
+                    <div>
+                        <iframe width="500" height="300" src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% else %}
+            <p>follow<a href="{{ post.link }}">{{ post.link }}</a></p>
+        {% endif %}
+    {% elif not post.link and not post.content and post.description %}
+        <form action="{% url 'post_detail' post.id %}">
+            <button><b>{{post.name}}</b>
+            {{ post.description }}</button>
         </form>
     {% endif %}
 {% empty %}
