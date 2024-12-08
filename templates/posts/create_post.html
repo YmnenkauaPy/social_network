@@ -4,73 +4,92 @@
 
 <form action="{% url 'create_post' %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <h2>Create Post</h2>
-    
-    <div>
-        <label for="id_name">Name:</label>
-        <input type="text" name="name" id="id_name" required>
+    <h2 class="mb-4 text-center">Create Post</h2>
+
+    <div class="mb-3">
+        <label for="id_name" class="form-label">Name:</label>
+        <input type="text" name="name" id="id_name" class="form-control" required>
+        {% if form.name.errors %}
+            <ul class="errorlist">
+                {% for error in form.name.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     </div>
 
-    <div>
-        <label for="id_name">Description:</label>
-        <input type="text" name="description" id="id_desciption" required>
+    <div class="mb-3">
+        <label for="id_description" class="form-label">Description:</label>
+        <input type="text" name="description" id="id_description" class="form-control" required>
+        {% if form.description.errors %}
+            <ul class="errorlist">
+                {% for error in form.description.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     </div>
 
-    <div>
-        <button type="button" class="toggle-btn" id="showFiles">Files</button>
-        <button type="button" class="toggle-btn" id="showLink">Links</button>
+    <div class="mb-3">
+        <button type="button" class="btn btn-secondary" id="showFiles">Files</button>
+        <button type="button" class="btn btn-secondary" id="showLink">Links</button>
     </div>
 
-    <div id="fileUploadSection" style="display:block;">
-        <label for="id_content">Upload File:</label>
-        <input type="file" name="content" id="id_content">
+    <div id="fileUploadSection" style="display:block;" class="mb-3">
+        <label for="id_content" class="form-label">Upload File:</label>
+        <input type="file" name="content" id="id_content" class="form-control">
+        {% if form.content.errors %}
+            <ul class="errorlist">
+                {% for error in form.content.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     </div>
 
-    <div id="LinkSection" style="display:none;">
-        <label for="id_link">Link:</label>
-        <input type="url" name="link" id="id_link" placeholder="Enter URL">
+    <div id="LinkSection" style="display:none;" class="mb-3">
+        <label for="id_link" class="form-label">Link:</label>
+        <input type="url" name="link" id="id_link" class="form-control" placeholder="Enter URL">
+        {% if form.link.errors %}
+            <ul class="errorlist">
+                {% for error in form.link.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     </div>
 
-    <button type="submit">Create</button>
+    <div class="mb-3 text-center">
+        <button type="submit" class="btn btn-primary">Create</button>
+    </div>
 </form>
-<a href="{% url 'profile' user.id %}">return to profile</a>
+
+<div class="text-center mt-3">
+    <a href="{% url 'profile' user.id %}" class="btn btn-link">Return to Profile</a>
+</div>
+
 
 <script>
-    document.getElementById('showFiles').onclick = function() {
-        document.getElementById('fileUploadSection').style.display = 'block';
-        document.getElementById('LinkSection').style.display = 'none';
+    const showFilesButton = document.getElementById("showFiles");
+    const showLinkButton = document.getElementById("showLink");
+    const fileUploadSection = document.getElementById("fileUploadSection");
+    const linkSection = document.getElementById("LinkSection");
 
-        setActiveButton(this);
-    }
+    fileUploadSection.style.display = "block";
+    linkSection.style.display = "none";
 
-    document.getElementById('showLink').onclick = function() {
-        document.getElementById('LinkSection').style.display = 'block';
-        document.getElementById('fileUploadSection').style.display = 'none';
+    showFilesButton.addEventListener("click", () => {
+        fileUploadSection.style.display = "block";
+        linkSection.style.display = "none";
+        showFilesButton.classList.add("btn-primary");
+        showLinkButton.classList.remove("btn-primary");
+    });
 
-        setActiveButton(this);
-    }
-
-    function setActiveButton(button) {
-        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
-
-
-        button.classList.add('active');
-    }
+    showLinkButton.addEventListener("click", () => {
+        linkSection.style.display = "block";
+        fileUploadSection.style.display = "none";
+        showLinkButton.classList.add("btn-primary");
+        showFilesButton.classList.remove("btn-primary");
+    });
 </script>
-
-<style>
-.toggle-btn {
-    background-color: lightgray;
-    color: black;
-    border: none;
-    border-radius: 4px;
-    padding: 5px 10px;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.toggle-btn.active {
-    background-color: blue;
-    color: white;}
-</style>
 {% endblock %}

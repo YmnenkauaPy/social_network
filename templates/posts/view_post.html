@@ -2,85 +2,114 @@
 
 {% block content %}
 {% load custom_tags %}
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<h2>{{ post.name }}</h2>
-{% if post.content %}
-    <div class="post-content mb-2">
-    {% if post.content.url|endswith:".jpg" or post.content.url|endswith:".png" or post.content.url|endswith:".jpeg" %}
-        <img src="{{ post.content.url }}" alt="img" style="max-width: 500px;">
-    {% elif post.media.url|endswith:".mp4" %}
-        <video width="320" height="240" controls>
-            <source src="{{ post.content.url }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    {% else %}
-        <a href="{{ post.content.url }}">Download file</a>
-    {% endif %}
-    </div>
-{% elif post.link %}
-    {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
-        {% with post.link|extract_youtube_id as video_id %}
-            {% if video_id %}
-                <div>
-                    <iframe width="500" height="300" src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allowfullscreen></iframe>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+<div class="container mt-4">
+    <div class="row" style="margin-top: 100px">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">{{ post.name }}</h2>
+                    {% if post.content %}
+                        <div class="post-content mb-3">
+                            {% if post.content.url|endswith:".jpg" or post.content.url|endswith:".png" or post.content.url|endswith:".jpeg" %}
+                                <img src="{{ post.content.url }}" alt="img" style="max-width: 500px;" class="img-fluid rounded border-secondary mx-auto d-block">
+                            {% elif post.content.url|endswith:".mp4" %}
+                                <div class="ratio ratio-16x9">
+                                    <video width="320" height="240" controls>
+                                        <source src="{{ post.content.url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            {% else %}
+                                <a href="{{ post.content.url }}" class="btn btn-primary mt-2">Download file</a>
+                            {% endif %}
+                        </div>
+                    {% elif post.link %}
+                        {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
+                            {% with post.link|extract_youtube_id as video_id %}
+                                {% if video_id %}
+                                    <div class="ratio ratio-16x9">
+                                        <iframe width="500" height="300" src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allowfullscreen></iframe>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <p>Follow <a href="{{ post.link }}">{{ post.link }}</a></p>
+                        {% endif %}
+                    {% endif %}
+                
+                    <p class="mt-3"><b>{{ post.creator }}</b> {% if post.description %}{{ post.description }}{% endif %}</p>
                 </div>
-            {% endif %}
-        {% endwith %}
-    {% else %}
-        <p>follow<a href="{{ post.link }}">{{ post.link }}</a></p>
-    {% endif %}
-{% endif %}
-<p><b>{{ post.creator }}</b> {% if post.description %}{{ post.description }}{% endif %}</p>
-{% for comment in comments %}
-    <div class="d-flex mb-2"></div>
-        <p><b>{{comment.creator}}</b><p id="comment_content" style="display:block">{{ comment.content }}</p><input type="text" name="content2" id="content2" style="display:none" value="{{comment.content}}"></p>  
-        <button 
-            type="button" id="{{ comment.id }}"
-            class="btn btn-sm {% if request.user in comment.like_to_comment.all %}btn-success{% else %}btn-outline-success{% endif %}" 
-            onclick="toggleLike(this.id)">
-            Like <span>{{ comment.like_to_comment.count }}</span>
-        </button>
-        {% if comment.creator == request.user %}
-            <button type="submit" id = "edit" class="btn btn-warning" style="margin-left: 5px; display:block;" onclick="Edit(this.id, {{ comment.id }})">Edit</button>
-            <button type="submit" id = "submit" class="btn btn-warning" style="margin-left: 5px; display:none;" onclick="Edit(this.id, {{ comment.id }})">Submit</button>
-            <button type="submit" id = "cancel" class="btn btn-secondary" style="margin-left: 5px; display:none;" onclick="Edit(this.id, {{ comment.id }})">Cancel</button>
-
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
-                Delete comment
-            </button>
-            
-            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
-              <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="confirmDeleteLabel">Confirm deletion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    Are you sure you want to delete this comment? You can't undo it.
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form action="{% url 'comment_delete' comment.id %}" method="POST">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                  </div>
-                </div>
-              </div>
             </div>
-        {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="navbar-expand navbar-dark bg-dark">
+                    <a class="navbar-brand ps-3">Comments</a>
+                </div>
+                <div class="card-body">
+                    {% for comment in comments %}
+                        <div class="mb-3 border-bottom pb-2">
+                            <p><b>{{ comment.creator }}</b></p>
+                            <p>{{ comment.content }}</p>
+                            <div class="d-flex align-items-center">
+                                <button 
+                                    type="button" id="{{ comment.id }}"
+                                    class="btn btn-sm {% if request.user in comment.like_to_comment.all %}btn-success{% else %}btn-outline-success{% endif %} me-2" 
+                                    onclick="toggleLike(this.id)">
+                                    <i class="bi bi-hand-thumbs-up"></i> <span>{{ comment.like_to_comment.count }}</span>
+                                </button>
+                                
+                                {% if comment.creator == request.user %}
+                                    <button type="button" id="edit" class="btn btn-sm btn-warning me-2" onclick="Edit(this.id, {{ comment.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ comment.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    
+                                    <!-- Модальное окно удаления -->
+                                    <div class="modal fade" id="confirmDeleteModal{{ comment.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ comment.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="confirmDeleteLabel{{ comment.id }}">Confirm deletion</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Are you sure you want to delete this comment? You can't undo it.
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form action="{% url 'comment_delete' comment.id %}" method="POST">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p>No comments</p>
+                    {% endfor %}
+                    <br>
+                    <form action="{% url 'post_detail' post.id %}" method="POST">
+                        {% csrf_token %}
+                        <input type="text" name="content" id="content" placeholder="Add comment...">
+                        <button type="submit">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-{% empty %}
-    <b>No comments</b>
-{% endfor %}
-<br>
-<form action="{% url 'post_detail' post.id %}" method="POST">
-    {% csrf_token %}
-    <input type="text" name="content" id="content" placeholder="Add comment...">
-    <button type="submit">Send</button>
-</form>
+</div>
+
+
+
 
 <script>
     async function toggleLike(commentId) { 

@@ -6,8 +6,8 @@
     <style>
         .badge {
             position: absolute;
-            top: -5px;
-            right: -10px;
+            top: 35px;
+            right: 20px;
             background-color: red;
             color: white;
             border-radius: 50%;
@@ -36,7 +36,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'assets/demo/chart-area-demo.js' %}"></script>
     <script src="{% static 'assets/demo/chart-bar-demo.js' %}"></script>
-    
+    <script>
+        function submitPostForm(event) {
+            event.preventDefault(); 
+            document.getElementById('notificationsForm').submit();
+        }
+
+        function submitLogout(event) {
+            event.preventDefault(); 
+            document.getElementById('logoutForm').submit();
+        }
+
+        function submitCreatePost(event) {
+            event.preventDefault(); 
+            document.getElementById('CreatePostForm').submit();
+        }
+    </script>
 </head>
 
 <body class="sb-nav-fixed">
@@ -46,14 +61,12 @@
         <!-- Sidebar Toggle-->
         <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
         <!-- Navbar Search-->
-        {% if user.is_authenticated %}
-            <form method="GET" action="{% url 'search_for_users' %}" class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
-                <div class="input-group">
-                    <input class="form-control" name="search" type="text" placeholder="Search users..." aria-label="Search users..." autocomplete="off" aria-describedby="btnNavbarSearch" />
-                    <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
-                </div>
-            </form>
-        {% endif %}
+        <form method="GET" action="{% url 'search_for_users' %}" class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+            <div class="input-group">
+                <input class="form-control" name="search" type="text" placeholder="Search users..." aria-label="Search users..." autocomplete="off" aria-describedby="btnNavbarSearch" />
+                <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+            </div>
+        </form>
         <!-- Navbar-->
         <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
             <li class="nav-item dropdown">
@@ -67,17 +80,26 @@
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     {% if user.is_authenticated %}
                         <li><a class="dropdown-item" href="{% url 'profile' user.id %}">Profile</a></li>
-                        <li><form class="dropdown-item" action="{% url 'notifications' user.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit">
+                        <li>
+                            <a href="#" class="dropdown-item" onclick="submitPostForm(event)">
                                 Notifications
                                 {% if unread > 0 %}
                                     <span class="badge badge-danger">{{ unread }}</span>
                                 {% endif %}
-                            </button>
-                        </form></li>
+                            </a>
+                            <form id="notificationsForm" action="{% url 'notifications' user.id %}" method="POST" style="display: none;">
+                                {% csrf_token %}
+                            </form>
+                        </li>
                         <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        <li>
+                            <a href="#" class="dropdown-item" onclick="submitLogout(event)">
+                                Logout
+                            </a>
+                            <form id="logoutForm" action="{% url 'logout' %}" method="POST" style="display: none;">
+                                {% csrf_token %}
+                            </form>
+                        </li>
                     {% else %}
                         <li><hr class="dropdown-divider" /></li>
                         <li><a class="dropdown-item" href="{% url 'register' %}">Register</a></li>
@@ -92,14 +114,17 @@
             <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
-                        <div class="sb-sidenav-menu-heading"></div>
+                        <div class="sb-sidenav-menu-heading">Feautures</div>
                         <a class="nav-link" href="{% url 'main' %}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div>
                             Home
                         </a>
-                        <form class="nav-link" action="{% url 'create_post' %}" method="POST">
+                        <a href="#" class="nav-link" onclick="submitCreatePost(event)">
+                            <div class="sb-nav-link-icon"><i class="fas fa-pencil-alt"></i></div>
+                            Create Post
+                        </a>
+                        <form id="CreatePostForm" action="{% url 'create_post' %}" method="POST" style="display: none;">
                             {% csrf_token %}
-                            <button type="submit">Create Post</button>
                         </form>
                     </div>
                 </div>
