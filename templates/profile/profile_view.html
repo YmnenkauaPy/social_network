@@ -2,7 +2,7 @@
 
 {% block content %}
 {% load custom_tags %}
-<div class="profile-container">
+<div class="profile-container" style="margin-top: 20px;">
     <div class="profile-head">
         <h2>{{ custom_user.username }}</h2>
         {% if custom_user.profile_picture %}
@@ -13,8 +13,9 @@
     </div> 
     
     <p class="status">{{ online }}</p>
-    <p>Details: {{ custom_user.details }}</p>
-    <p>Data joined: {{ custom_user.date_joined }}</p>
+    <p class="mb-2"><strong>Details:</strong> {{ custom_user.details }}</p>
+    <p class="mb-2"><strong>Data joined:</strong> {{ custom_user.date_joined|date:"F j, Y" }}</p>
+
 
     <div class="user-stats">
         <a href="{% url 'related_users' custom_user.id 'followers' %}">Followers: {{ custom_user.followers.count }}</a>
@@ -39,12 +40,40 @@
         <div class="user-actions">
             <form method="POST" action="{% url 'update_profile' %}">
                 {% csrf_token %}
-                <button class="action-btn">Change profile details</button>
+                <button class="btn btn-warning w-100">Change profile details</button>
             </form>
-            <form method="GET" action="{% url 'delete_profile' user.id %}">
-                {% csrf_token %}
-                <button class="action-btn delete-btn">Delete account</button>
-            </form>
+            <br>
+            <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ user.id }}">Delete account</button>
+            <!-- Модальное окно удаления -->
+            <div class="modal fade" id="confirmDeleteModal{{ user.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ user.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmDeleteLabel{{ user.id }}">Confirm deletion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this account? You can't undo it.
+                            <div class="mt-3">
+                                <label for="password1">Enter your password:</label>
+                                <input type="password" class="form-control mb-2" id="password1{{ user.id }}" placeholder="Enter your password" required>
+                                <label for="password2">Confirm your password:</label>
+                                <input type="password" class="form-control" id="password2{{ user.id }}" placeholder="Confirm your password" required>
+                                <div id="passwordMismatch{{ user.id }}" class="text-danger mt-2" style="display: none;">
+                                    <small>Passwords do not match!</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form action="{% url 'delete_profile' user.id %}" method="POST" id="deleteForm{{ user.id }}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger" id="deleteBtn{{ user.id }}" disabled>Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     {% endif %}
 </div>
@@ -63,7 +92,40 @@
                         </div>
                     </div>
                     <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                        <div class="text-center"><a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a></div>
+                        <div class="text-center d-flex justify-content-center align-items-center gap-2 mt-2">
+                            <a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a>
+                            {% if post.creator.id == user.id %}
+                                <form method="GET" action="{% url 'edit_post' post.id %}">
+                                    <button type="submit" id="edit" class="btn btn-sm btn-warning me-2">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <!-- Модальное окно удаления -->
+                                <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="confirmDeleteLabel{{ post.id }}">Confirm deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete this post? You can't undo it.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'delete_post' post.id %}" method="POST">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 {% elif post.link %}
                     {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
@@ -78,7 +140,40 @@
                                     </div>
                                 </div>
                                 <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                                    <div class="text-center"><a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a></div>
+                                    <div class="text-center d-flex justify-content-center align-items-center gap-2 mt-2">
+                                        <a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a>
+                                        {% if post.creator.id == user.id %}
+                                            <form method="POST" action="{% url 'edit_post' post.id %}">
+                                                <button type="button" id="edit" class="btn btn-sm btn-warning me-2">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            <!-- Модальное окно удаления -->
+                                            <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="confirmDeleteLabel{{ post.id }}">Confirm deletion</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            Are you sure you want to delete this post? You can't undo it.
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <form action="{% url 'delete_post' post.id %}" method="POST">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             {% endif %}
                         {% endwith %}
@@ -89,7 +184,40 @@
                             </div>
                         </div>
                         <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                            <div class="text-center"><a class="btn btn-outline-dark mt-auto" href="{{ post.link }}">Follow {{ post.link }}</a></div>
+                            <div class="text-center d-flex justify-content-center align-items-center gap-2 mt-2">
+                                <a class="btn btn-outline-dark mt-auto" href="{{ post.link }}">Follow {{ post.link }}</a>
+                                {% if post.creator.id == user.id %}
+                                    <form method="POST" action="{% url 'edit_post' post.id %}">
+                                        <button type="button" id="edit" class="btn btn-sm btn-warning me-2">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    <!-- Модальное окно удаления -->
+                                    <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="confirmDeleteLabel{{ post.id }}">Confirm deletion</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Are you sure you want to delete this post? You can't undo it.
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form action="{% url 'delete_post' post.id %}" method="POST">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     {% endif %}
                 {% elif not post.link and not post.content and post.description %}
@@ -100,17 +228,75 @@
                         </div>
                     </div>
                     <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                        <div class="text-center"><a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a></div>
+                        <div class="text-center d-flex justify-content-center align-items-center gap-2 mt-2">
+                            <a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a>
+                            {% if post.creator.id == user.id %}
+                                <form method="POST" action="{% url 'edit_post' post.id %}">
+                                    <button type="button" id="edit" class="btn btn-sm btn-warning me-2">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <!-- Модальное окно удаления -->
+                                <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="confirmDeleteLabel{{ post.id }}">Confirm deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete this post? You can't undo it.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'delete_post' post.id %}" method="POST">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 {% endif %}
                 </div>
             </div>
             {% empty %}
-                <p>No posts on this page.</p>
+                <p class="text-center">No posts on this page.</p>
             {% endfor %}
         </div>
     </div>
 </section>
+
+<script>
+    document.getElementById('password1{{ user.id }}').addEventListener('input', checkPasswords);
+    document.getElementById('password2{{ user.id }}').addEventListener('input', checkPasswords);
+
+    function checkPasswords() {
+        var password1 = document.getElementById('password1{{ user.id }}').value;
+        var password2 = document.getElementById('password2{{ user.id }}').value;
+        var mismatchMessage = document.getElementById('passwordMismatch{{ user.id }}');
+        var deleteBtn = document.getElementById('deleteBtn{{ user.id }}');
+
+        if (password1 && password2) {
+            if (password1 === password2) {
+                mismatchMessage.style.display = 'none';
+                deleteBtn.disabled = false;  // Разблокируем кнопку
+            } else {
+                mismatchMessage.style.display = 'block';
+                deleteBtn.disabled = true;  // Блокируем кнопку
+            }
+        } else {
+            mismatchMessage.style.display = 'none';
+            deleteBtn.disabled = true;  // Блокируем кнопку, если поля пустые
+        }
+    }
+</script>
 
 <style>
 .profile-container {
@@ -182,29 +368,6 @@
 
 .user-actions {
     margin-top: 20px;
-}
-
-.action-btn {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 10px 15px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin: 5px; 
-}
-
-.action-btn:hover {
-    background-color: #5a6268;
-}
-
-.delete-btn {
-    background-color: #dc3545; 
-}
-
-.delete-btn:hover {
-    background-color: #c82333; 
 }
 </style>
 {% endblock %}

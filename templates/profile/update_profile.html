@@ -1,69 +1,37 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div>
-    
-</div>
-<form method="POST" action = "{% url 'update_profile' %}" enctype="multipart/form-data">
-    {% csrf_token %}
-    {% if user.profile_picture %}
-        <img src="{{ user.profile_picture.url }}" alt="current profile_picture" style="max-width: 200px;"><br><br>
-    {% endif %}
-    <div>
-        <label for="id_media">
-            Upload Profile Picture
-        </label>
-        <input type="file" name="profile_picture" id="id_media">
+<div style="margin-top: 80px;">
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Update Profile</h2>
+        <form method="POST" action="{% url 'update_profile' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="text-center mb-3">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="current profile picture" class="img-fluid profile-image" height="150px" width="100">
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_media">Upload Profile Picture</label>
+                <input type="file" name="profile_picture" id="id_media" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                <textarea name="username" id="id_username" class="form-control" rows="2">{{ user.username }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="id_details">Details</label>
+                <textarea name="details" id="id_details" class="form-control" rows="4">{{ user.details }}</textarea>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
     </div>
-    <p>Username: <textarea name="username">{{ user.username }}</textarea></p>
-    <p>Details: <textarea name="details">{{ user.details }}</textarea></p>
-    <button type="submit">Submit</button>
-</form>
-<style>
-.update-profile-container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-}
-
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.current-picture {
-    text-align: center;
-}
-
-.current-profile-image {
-    max-width: 200px;
-    border-radius: 8px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.form-input, .form-textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Ensures padding is included in total width */
-}
-
-.form-textarea {
-    resize: vertical; /* Allows vertical resizing of textarea */
-}
-
-</style>
+</div>
 {% endblock %}

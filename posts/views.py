@@ -35,6 +35,32 @@ def create_post(request):
 
     return render(request, 'posts/create_post.html')
 
+def edit_post(request, pk):
+    post = get_object_or_404(models.Post, id=pk)
+
+    if request.method == 'POST':
+        form = forms.PostForm(request.POST, request.FILES, instance=post)
+        
+        if form.is_valid():
+            form.save()
+            return redirect('post_detail', post_id = pk)
+        else:
+            print(form.errors)
+    else:
+        form = forms.PostForm(instance=post)
+
+    return render(request, 'posts/edit_post.html', {'post':post})
+
+def delete_post(request, pk):
+    post = get_object_or_404(models.Post, id=pk)
+
+    if request.method == 'POST':  
+        post.delete()
+        return redirect('profile', user_id = request.user.id)  
+
+    return redirect('profile', user_id = request.user.id)
+
+
 class PostDetailView(View):
     def get(self, request, post_id):
         post = get_object_or_404(models.Post, id=post_id)

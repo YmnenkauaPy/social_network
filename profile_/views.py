@@ -87,7 +87,7 @@ def delete_profile(request, user_id):
         user.delete() 
         return redirect('main') 
 
-    return render(request, 'profile/delete_profile.html')
+    return redirect('profile', user_id = request.user.id)
 
 def search_for_users(request):
     search = request.GET.get('search', '') 
