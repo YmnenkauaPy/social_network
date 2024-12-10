@@ -52,7 +52,8 @@
                     {% for comment in comments %}
                         <div class="mb-3 border-bottom pb-2">
                             <p><b>{{ comment.creator }}</b></p>
-                            <p>{{ comment.content }}</p>
+                            <p id="comment_content" style="display:block">{{ comment.content }}</p>
+                            <input type="text" name="content2" id="content2" class="form-control" style="display:none" value="{{ comment.content }}">
                             <div class="d-flex align-items-center">
                                 <button 
                                     type="button" id="{{ comment.id }}"
@@ -62,9 +63,16 @@
                                 </button>
                                 
                                 {% if comment.creator == request.user %}
-                                    <button type="button" id="edit" class="btn btn-sm btn-warning me-2" onclick="Edit(this.id, {{ comment.id }})">
+                                    <button type="button" id="edit" class="btn btn-sm btn-warning me-2" style="display:block;" onclick="Edit(this.id, {{ comment.id }})">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    <button type="button" id="submit" class="btn btn-sm btn-success me-2" style="display:none;" onclick="Edit(this.id, {{ comment.id }})">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                    <button type="button" id="cancel" class="btn btn-sm btn-secondary me-2" style="display:none;" onclick="Edit(this.id, {{ comment.id }})">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+
                                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ comment.id }}">
                                         <i class="bi bi-trash"></i>
                                     </button>

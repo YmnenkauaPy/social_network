@@ -60,6 +60,8 @@ def delete_post(request, pk):
 
     return redirect('profile', user_id = request.user.id)
 
+def share_post(request, pk):
+    pass
 
 class PostDetailView(View):
     def get(self, request, post_id):

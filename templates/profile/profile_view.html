@@ -100,9 +100,40 @@
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
+                                <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                                <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+
+                                <!-- Модальное окно поделиться -->
+                                <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-bottom">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Share Post</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-center">
+                                                <p>Select an option to share this post:</p>
+                                                <div class="d-flex justify-content-around">
+                                                    <button class="btn btn-outline-primary" onclick="share({{ post.id }}, 'link')">
+                                                        <i class="fas fa-link"></i> Link
+                                                    </button>
+                                                    <button class="btn btn-outline-success" onclick="share({{ post.id }}, 'chats')">
+                                                        <i class="fas fa-comments"></i> Chats
+                                                    </button>
+                                                    <button class="btn btn-outline-warning" onclick="share({{ post.id }}, 'groups')">
+                                                        <i class="fas fa-users"></i> Groups
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                                 <!-- Модальное окно удаления -->
                                 <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
@@ -151,6 +182,36 @@
                                             <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal_" data-bs-target="#shareModal{{ post.id }}">
+                                                <i class="fas fa-share-alt"></i>
+                                            </button>
+
+                                            <!-- Модальное окно поделиться -->
+                                            <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-bottom">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Share Post</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body text-center">
+                                                            <p>Select an option to share this post:</p>
+                                                            <div class="d-flex justify-content-around">
+                                                                <button class="btn btn-outline-primary" onclick="share({{ post.id }}, 'link')">
+                                                                    <i class="fas fa-link"></i> Link
+                                                                </button>
+                                                                <button class="btn btn-outline-success" onclick="share({{ post.id }}, 'chats')">
+                                                                    <i class="fas fa-comments"></i> Chats
+                                                                </button>
+                                                                <button class="btn btn-outline-warning" onclick="share({{ post.id }}, 'groups')">
+                                                                    <i class="fas fa-users"></i> Groups
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <!-- Модальное окно удаления -->
                                             <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
@@ -195,6 +256,36 @@
                                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
                                         <i class="bi bi-trash"></i>
                                     </button>
+                                    <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal_" data-bs-target="#shareModal{{ post.id }}">
+                                        <i class="fas fa-share-alt"></i>
+                                    </button>
+
+                                    <!-- Модальное окно поделиться -->
+                                    <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-bottom">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Share Post</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <p>Select an option to share this post:</p>
+                                                    <div class="d-flex justify-content-around">
+                                                        <button class="btn btn-outline-primary" onclick="share({{ post.id }}, 'link')">
+                                                            <i class="fas fa-link"></i> Link
+                                                        </button>
+                                                        <button class="btn btn-outline-success" onclick="share({{ post.id }}, 'chats')">
+                                                            <i class="fas fa-comments"></i> Chats
+                                                        </button>
+                                                        <button class="btn btn-outline-warning" onclick="share({{ post.id }}, 'groups')">
+                                                            <i class="fas fa-users"></i> Groups
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Модальное окно удаления -->
                                     <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
@@ -230,15 +321,45 @@
                     <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
                         <div class="text-center d-flex justify-content-center align-items-center gap-2 mt-2">
                             <a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a>
-                            {% if post.creator.id == user.id %}
+                            {% if post.creator.id == user.id %}             
                                 <form method="POST" action="{% url 'edit_post' post.id %}">
                                     <button type="button" id="edit" class="btn btn-sm btn-warning me-2">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
+                                <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                                <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal_" data-bs-target="#shareModal{{ post.id }}">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                                
+                                <!-- Модальное окно поделиться -->
+                                <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-bottom">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Share Post</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-center">
+                                                <p>Select an option to share this post:</p>
+                                                <div class="d-flex justify-content-around">
+                                                    <button class="btn btn-outline-primary" onclick="share({{ post.id }}, 'link')">
+                                                        <i class="fas fa-link"></i> Link
+                                                    </button>
+                                                    <button class="btn btn-outline-success" onclick="share({{ post.id }}, 'chats')">
+                                                        <i class="fas fa-comments"></i> Chats
+                                                    </button>
+                                                    <button class="btn btn-outline-warning" onclick="share({{ post.id }}, 'groups')">
+                                                        <i class="fas fa-users"></i> Groups
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Модальное окно удаления -->
                                 <div class="modal fade" id="confirmDeleteModal{{ post.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ post.id }}" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
@@ -273,11 +394,12 @@
     </div>
 </section>
 
+
 <script>
     document.getElementById('password1{{ user.id }}').addEventListener('input', checkPasswords);
     document.getElementById('password2{{ user.id }}').addEventListener('input', checkPasswords);
 
-    function checkPasswords() {
+    async function checkPasswords() {
         var password1 = document.getElementById('password1{{ user.id }}').value;
         var password2 = document.getElementById('password2{{ user.id }}').value;
         var mismatchMessage = document.getElementById('passwordMismatch{{ user.id }}');
@@ -296,9 +418,38 @@
             deleteBtn.disabled = true;  // Блокируем кнопку, если поля пустые
         }
     }
+
+    async function share(post_id, type) {
+        if (type === 'link') {
+            navigator.clipboard.writeText(`https://view/post/${post_id}`);
+        } else if (type === 'chats') {
+            // Добавить логику для чатов.
+        } else if (type === 'groups') {
+            // Добавить логику для групп.
+        }
+    }
+    
 </script>
 
 <style>
+.modal-dialog-bottom {
+    position: fixed;
+    bottom: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    animation: slideUp 0.3s ease-in-out;
+}
+    
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+    
 .profile-container {
     max-width: 600px; /* Optional: limit the width of the profile container */
     margin: 0 auto; /* Center the container */
