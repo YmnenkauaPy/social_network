@@ -9,15 +9,19 @@
                 <a class="h5 text-decoration-none text-primary" href="{% url 'profile' custom_user.id %}">{{ custom_user.username }}</a>
                 <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
                     {% csrf_token %}
-                    {% if custom_user.id != user.id %}
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        {% if custom_user in user.followings.all %}
+                            Unfollow
+                        {% else %}
+                            Follow
+                        {% endif %}
+                    </button>
+                </form>
+                <form action="{% url 'be_friends' custom_user.id user.id %}" method="POST" class="friends-form" data-user-id="{{ custom_user.id }}">
+                    {% csrf_token %}
                         <button type="submit" class="btn btn-primary btn-sm">
-                            {% if custom_user in user.followings.all %}
-                                Unfollow
-                            {% else %}
-                                Follow
-                            {% endif %}
+                     
                         </button>
-                    {% endif %}
                 </form>
             </div>
         {% empty %}

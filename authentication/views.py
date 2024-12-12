@@ -1,20 +1,22 @@
 from authentication import forms
 from authentication.models import CustomUser
+from posts.models import Post
 from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, login
+from datetime import timedelta
+from django.utils.timezone import now
+from collections import defaultdict
 
 def custom_login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
 
-        # Проверяем пользователя
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect("main")  # Редирект на главную или другую страницу
+            return redirect("main") 
         else:
-            # Если данные некорректны
             return render(request, "registration/login.html", {"error": "Invalid username or password"})
 
     return render(request, "registration/login.html")
@@ -26,10 +28,30 @@ def count_unread_notifications(request):
     return unread
 
 def main(request):
-    unread = 0
-    if request.user.is_authenticated: 
-        unread = count_unread_notifications(request)
-    return render(request, 'base.html', {'unread':unread})
+    if not request.user.is_authenticated:
+        return redirect('login')
+    three_days_ago = now() - timedelta(days=3)
+    friends = request.user.friends.all()
+    followings = request.user.followings.all()
+    user_ids = list(friends.values_list('id', flat=True)) + list(followings.values_list('id', flat=True))
+    
+    # Фильтруем посты
+    posts = Post.objects.filter(
+        creator_id__in=user_ids,
+        created_at__range=[three_days_ago, now()]
+    ).order_by('-created_at')
+
+    # Группируем посты по пользователям
+    user_posts = {}
+    for post in posts:
+        if post.creator not in user_posts:
+            user_posts[post.creator] = []
+        user_posts[post.creator].append(post)
+ 
+    return render(request, 'registration/main.html', {
+        'user_posts': user_posts,
+        'friends': friends,
+    })
 
 
 def register(request):

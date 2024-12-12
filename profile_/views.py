@@ -89,6 +89,9 @@ def delete_profile(request, user_id):
 
     return redirect('profile', user_id = request.user.id)
 
+def be_friends(request, to_whom, from_whom):
+    pass
+
 def search_for_users(request):
     search = request.GET.get('search', '') 
     users = CustomUser.objects.filter(username__icontains=search).exclude(id=request.user.id) if search else []

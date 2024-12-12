@@ -8,4 +8,5 @@ urlpatterns = [
     path('search/for/users/', views.search_for_users, name='search_for_users'),
     path('related/users/<int:user_id>/<str:relation_type>/', views.related_users, name='related_users'),
     path('toggle/follow/user/<int:user_id>/', views.toggle_follow_user, name='follow_user'),
+    path('be_friends/<int:to_whom>/<int:from_whom>', views.be_friends, name='be_friends'),
 ]

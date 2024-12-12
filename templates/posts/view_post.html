@@ -39,6 +39,7 @@
                     {% endif %}
                 
                     <p class="mt-3"><b>{{ post.creator }}</b> {% if post.description %}{{ post.description }}{% endif %}</p>
+                    <i class="mt-3">{{ post.created_at|date:"F j, Y, g:i a" }}</i>
                 </div>
             </div>
         </div>
