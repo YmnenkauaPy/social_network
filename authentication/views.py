@@ -35,13 +35,11 @@ def main(request):
     followings = request.user.followings.all()
     user_ids = list(friends.values_list('id', flat=True)) + list(followings.values_list('id', flat=True))
     
-    # Фильтруем посты
     posts = Post.objects.filter(
         creator_id__in=user_ids,
         created_at__range=[three_days_ago, now()]
     ).order_by('-created_at')
 
-    # Группируем посты по пользователям
     user_posts = {}
     for post in posts:
         if post.creator not in user_posts:

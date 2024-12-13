@@ -90,13 +90,40 @@ def delete_profile(request, user_id):
     return redirect('profile', user_id = request.user.id)
 
 def be_friends(request, to_whom, from_whom):
-    pass
+    if request.method == "POST":
+        to_whom = CustomUser.objects.get(id=to_whom)
+        from_whom = CustomUser.objects.get(id=from_whom)
+
+        notif = Notification(name='Friends', description=f"{from_whom.username} sent you a friend's request!")
+        notif.save() 
+        notif.receiver.add(to_whom)
+        notif.sender.add(from_whom) #Тот кто отправляет запрос в друзья
+
+        notif = Notification(name='Friends', description=f"You sent to {to_whom.username} a friend's request!")
+        notif.save() 
+        notif.receiver.add(from_whom)
+        notif.sender.add(from_whom) #Тот кто отправляет запрос в друзья
+
+        status = 'sent'
+
+        return JsonResponse({'status':'ok', 'friend_status':status})
 
 def search_for_users(request):
     search = request.GET.get('search', '') 
     users = CustomUser.objects.filter(username__icontains=search).exclude(id=request.user.id) if search else []
- 
-    return render(request, 'profile/search_results.html', {'users': users, 'type':'results of searching'})
+    
+    users_ = {}
+
+    for user in users:
+        notification = Notification.objects.filter(receiver=user, sender=request.user, name='Friends').order_by('-created_at').first()
+        if notification and not request.user in user.friends.all():
+            users_[user] = 'Request has been sent'
+        elif request.user in user.friends.all():
+            users_[user] = 'You are friends'
+        else:
+            users_[user] = 'Be friend'
+    
+    return render(request, 'profile/search_results.html', {'users': users_, 'type':'results of searching'})
 
 def related_users(request, user_id, relation_type):
     user = CustomUser.objects.get(id=user_id)

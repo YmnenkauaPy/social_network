@@ -4,7 +4,7 @@ import notifications.models as m
 
 def view_notifications(request, user_id):
     user = CustomUser.objects.get(id=user_id)
-    notifications = m.Notification.objects.filter(receiver__id=user_id).order_by('created_at')
+    notifications = m.Notification.objects.filter(receiver__id=user_id).order_by('-created_at')
     for i in notifications:
         i.read = True
         i.save()

@@ -16,7 +16,7 @@
                                     <div class="card h-100">                
                                         <div class="card-header bg-dark text-white d-flex align-items-center">
                                             <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src="{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                                            <a href="{% url 'profile' user.id %}"><span>{{ user.username }}</span></a>
+                                            <a href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
                                         </div>
                                         
                                         {% if post.content and not post.content.url|endswith:".mp4" %}
@@ -53,40 +53,28 @@
             <div class="col-md-4">
                 {% for user, posts in user_posts.items %}
                     {% for post in posts %}
-                        {% if post.description and not post.link and not post.content %}
-                            <div class="card-header bg-dark text-white d-flex align-items-center">
-                                <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src= "{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                                <span>{{ user.username }}</span>
-                            </div>
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ post.name }}</h5>
-                                    <p class="card-text">{{ post.description }}</p>
+                        <a href="{% url 'post_detail' post.id %}" style="text-decoration: none; color: inherit;"></a>
+                            {% if post.description and not post.link and not post.content or not "youtube.com" in post.link and not "youtu.be" in post.link and post.link or not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" and post.content %}
+                                <div class="card-header bg-dark text-white d-flex align-items-center">
+                                    <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src= "{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                                    <a href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
                                 </div>
-                            </div>
-                        {% elif not "youtube.com" in post.link and not "youtu.be" in post.link and post.link %}
-                            <div class="card-header bg-dark text-white d-flex align-items-center">
-                                <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src= "{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                                <span>{{ user.username }}</span>
-                            </div>
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ post.name }}</h5>
-                                    <a href="{{ post.link }}" class="btn btn-outline-dark">Follow {{ post.link }}</a>
+                                <div class="card mb-4">
+                                    <div class="card-body">
+                                        {% if not post.content and not post.link and post.description %}
+                                            <h5 class="card-title">{{ post.name }}</h5>
+                                            <p class="card-text">{{ post.description }}</p>
+                                        {% elif not "youtube.com" in post.link and not "youtu.be" in post.link and post.link %}
+                                            <h5 class="card-title">{{ post.name }}</h5>
+                                            <a href="{{ post.link }}" class="btn btn-outline-dark">Follow {{ post.link }}</a>
+                                        {% elif not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" and post.content %}
+                                            <h5 class="card-title">{{ post.name }}.{{post.content.url|file_extension}}</h5>
+                                            <a href="{{ post.content.url }}" class="btn btn-primary mt-2">Download file</a>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                        {% elif not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" %}
-                            <div class="card-header bg-dark text-white d-flex align-items-center">
-                                <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src= "{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                                <a href="{% url 'profile' user.id %}"><span>{{ user.username }}</span></a>
-                            </div>
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ post.name }}.{{post.content.url|file_extension}}</h5>
-                                    <a href="{{ post.content.url }}" class="btn btn-primary mt-2">Download file</a>
-                                </div>
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                        </a>
                     {% endfor %}
                 {% empty %}
                     <p class="text-center">No text posts.</p>
