@@ -11,7 +11,7 @@
                 <div class="row">
                     {% for user, posts in user_posts.items %}
                         {% for post in posts %}
-                        {% if "youtube.com" in post.link or "youtu.be" in post.link or post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" %}
+                            {% if "youtube.com" in post.link or "youtu.be" in post.link or post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" %}
                                 <div class="col-md-6 mb-4">
                                     <div class="card h-100">                
                                         <div class="card-header bg-dark text-white d-flex align-items-center">
@@ -22,7 +22,7 @@
                                         {% if post.content and not post.content.url|endswith:".mp4" %}
                                             <img class="card-img-top" src="{{ post.content.url }}" alt="Post content">
 
-                                        {% elif post.content.url|endswith:".mp4" %}
+                                        {% elif post.content and post.content.url|endswith:".mp4" %}
                                             <div class="ratio ratio-16x9">
                                                 <video width="320" height="240" controls>
                                                     <source src="{{ post.content.url }}" type="video/mp4">
@@ -44,41 +44,48 @@
                             {% endif %}
                         {% endfor %}
                     {% empty %}
-                        <p class="text-center">No posts for {{ user.username }}.</p>
+                        <p class="text-center">No posts.</p>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Right column for text and links -->
             <div class="col-md-4">
-                {% for user, posts in user_posts.items %}
-                    {% for post in posts %}
-                        <a href="{% url 'post_detail' post.id %}" style="text-decoration: none; color: inherit;"></a>
-                            {% if post.description and not post.link and not post.content or not "youtube.com" in post.link and not "youtu.be" in post.link and post.link or not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" and post.content %}
-                                <div class="card-header bg-dark text-white d-flex align-items-center">
-                                    <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src= "{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                                    <a href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
-                                </div>
-                                <div class="card mb-4">
-                                    <div class="card-body">
-                                        {% if not post.content and not post.link and post.description %}
-                                            <h5 class="card-title">{{ post.name }}</h5>
-                                            <p class="card-text">{{ post.description }}</p>
-                                        {% elif not "youtube.com" in post.link and not "youtu.be" in post.link and post.link %}
-                                            <h5 class="card-title">{{ post.name }}</h5>
-                                            <a href="{{ post.link }}" class="btn btn-outline-dark">Follow {{ post.link }}</a>
-                                        {% elif not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" and post.content %}
-                                            <h5 class="card-title">{{ post.name }}.{{post.content.url|file_extension}}</h5>
-                                            <a href="{{ post.content.url }}" class="btn btn-primary mt-2">Download file</a>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </a>
-                    {% endfor %}
-                {% empty %}
-                    <p class="text-center">No text posts.</p>
-                {% endfor %}
+                <div class="card border-primary mb-4">
+                    <div class="card-header bg-dark text-white text-center">
+                        <h5>Text Posts</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for user, posts in user_posts.items %}
+                            {% for post in posts %}
+                                <a href="{% url 'post_detail' post.id %}" style="text-decoration: none; color: inherit;"></a>
+                                    {% if post.description and not post.link and not post.content or not "youtube.com" in post.link and not "youtu.be" in post.link and post.link or not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" and post.content %}
+                                        <div class="card-header bg-dark text-white d-flex align-items-center">
+                                            <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src= "{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                                            <a href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
+                                        </div>
+                                        <div class="card mb-4">
+                                            <div class="card-body">
+                                                {% if not post.content and not post.link and post.description %}
+                                                    <h5 class="card-title">{{ post.name }}</h5>
+                                                    <p class="card-text">{{ post.description }}</p>
+                                                {% elif not "youtube.com" in post.link and not "youtu.be" in post.link and post.link %}
+                                                    <h5 class="card-title">{{ post.name }}</h5>
+                                                    <a href="{{ post.link }}" class="btn btn-outline-dark">Follow {{ post.link }}</a>
+                                                {% elif not post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp,.mp4" and post.content %}
+                                                    <h5 class="card-title">{{ post.name }}.{{post.content.url|file_extension}}</h5>
+                                                    <a href="{{ post.content.url }}" class="btn btn-primary mt-2">Download file</a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        {% empty %}
+                            <p class="text-center">No text posts.</p>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>

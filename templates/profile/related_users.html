@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<div style="margin-top: 100px;">
+    <div class="container mt-4">
+        <h2>{{ type }}</h2>
+        {% for user in users %}
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded shadow-sm">
+                <div class="card-header text-white d-flex align-items-center">
+                    <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src="{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                    <a class="h5 text-decoration-none text-primary" href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
+                </div>
+            </div>
+        {% empty %}
+            <p>No users were found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

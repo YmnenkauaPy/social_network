@@ -1,8 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from authentication.models import CustomUser
 from posts.models import Post
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from profile_ import forms
 from django.contrib.sessions.models import Session
 from django.utils.timezone import now
@@ -94,17 +93,27 @@ def be_friends(request, to_whom, from_whom):
         to_whom = CustomUser.objects.get(id=to_whom)
         from_whom = CustomUser.objects.get(id=from_whom)
 
-        notif = Notification(name='Friends', description=f"{from_whom.username} sent you a friend's request!")
-        notif.save() 
-        notif.receiver.add(to_whom)
-        notif.sender.add(from_whom) #Тот кто отправляет запрос в друзья
+        if to_whom.friends.filter(id=from_whom.id).exists():
+            # Если уже друзья, удаляем из друзей
+            to_whom.friends.remove(from_whom)
+            from_whom.friends.remove(to_whom)
+            status = 'unfriend'
 
-        notif = Notification(name='Friends', description=f"You sent to {to_whom.username} a friend's request!")
-        notif.save() 
-        notif.receiver.add(from_whom)
-        notif.sender.add(from_whom) #Тот кто отправляет запрос в друзья
+            notif = Notification(name='Friends', description=f"{from_whom.username} stopped your friendship!", receiver=to_whom, sender=from_whom)
+            notif.save() 
 
-        status = 'sent'
+            notif = Notification(name='Friends', description=f"You stop your friendship with {to_whom.username}!", receiver=from_whom, sender=from_whom)
+            notif.save() 
+
+            status = 'unfriend'
+        else:
+            notif = Notification(name='Friends', description=f"{from_whom.username} sent you a friend's request!", receiver=to_whom, sender=from_whom)
+            notif.save() 
+
+            notif = Notification(name='Friends', description=f"You sent to {to_whom.username} a friend's request!", receiver=from_whom, sender=from_whom)
+            notif.save() 
+
+            status = 'sent'
 
         return JsonResponse({'status':'ok', 'friend_status':status})
 
@@ -119,16 +128,16 @@ def search_for_users(request):
         if notification and not request.user in user.friends.all():
             users_[user] = 'Request has been sent'
         elif request.user in user.friends.all():
-            users_[user] = 'You are friends'
+            users_[user] = 'Unfriend'
         else:
-            users_[user] = 'Be friend'
+            users_[user] = 'Friend'
     
     return render(request, 'profile/search_results.html', {'users': users_, 'type':'results of searching'})
 
 def related_users(request, user_id, relation_type):
     user = CustomUser.objects.get(id=user_id)
     related_users = getattr(user, relation_type).all()
-    return render(request, 'profile/search_results.html', {'users': related_users, 'type':relation_type})
+    return render(request, 'profile/related_users.html', {'users': related_users, 'type':relation_type})
 
 def toggle_follow_user(request, user_id):
     if request.method == 'POST':
@@ -142,14 +151,12 @@ def toggle_follow_user(request, user_id):
                 status = 'unfollowed'
 
                 #For person I unfollow
-                notification = Notification(name='Unfollowed', description=f'{current_user.username} unfollowed you')
+                notification = Notification(name='Unfollowed', description=f'{current_user.username} unfollowed you', receiver=user_to_toggle)
                 notification.save() 
-                notification.receiver.add(user_to_toggle)
 
                 #For me who I unfollowed
-                notification = Notification(name='Unfollowed', description=f'You unfollowed {user_to_toggle.username}')
+                notification = Notification(name='Unfollowed', description=f'You unfollowed {user_to_toggle.username}', receiver=current_user)
                 notification.save() 
-                notification.receiver.add(current_user)
 
             else:
                 current_user.followings.add(user_to_toggle)  #Follow
@@ -157,17 +164,14 @@ def toggle_follow_user(request, user_id):
                 status = 'followed'
 
                 #For person I follow
-                notification = Notification(name='Followed', description=f'{current_user.username} followed you')
+                notification = Notification(name='Followed', description=f'{current_user.username} followed you', receiver=user_to_toggle)
                 notification.save()  
-                notification.receiver.add(user_to_toggle)  
 
                 #For me who I followed
-                notification = Notification(name='Followed', description=f'You followed {user_to_toggle.username}')
+                notification = Notification(name='Followed', description=f'You followed {user_to_toggle.username}', receiver=current_user)
                 notification.save() 
-                notification.receiver.add(current_user)
             current_user.save()
 
             return JsonResponse({'status': 'ok', 'follow_status': status})
 
-    
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)

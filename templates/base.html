@@ -127,6 +127,10 @@
                         <form id="CreatePostForm" action="{% url 'create_post' %}" method="POST" style="display: none;">
                             {% csrf_token %}
                         </form>
+                        <a class="nav-link" href="{% url 'chats' %}">
+                            <div class="sb-nav-link-icon"><i class="bi bi-chat-text"></i></div>
+                            Chats
+                        </a>
                     </div>
                 </div>
             </nav>

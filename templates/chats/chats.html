@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4" >
+    <div class="row">
+        <!-- Список чатов слева -->
+        <div class="col-md-4 border-end" style="margin-top: 50px; margin-left: -105px; height: calc(100vh - 50px);">
+            {% for name, chat in chats.items %}
+                <a href="" class="text-decoration-none text-dark">
+                    <div class="card mb-2 border border-dark">
+                        <div class="card-body">
+                            <h5 class="card-title mb-1">{{ name }}</h5>
+                            <!-- Последнее сообщение -->
+                            <p class="card-text text-muted">Последнее сообщение будет здесь</p>
+                        </div>
+                    </div>
+                </a>
+            {% empty %}
+                <p class="text-center text-muted mt-4">There are no chats</p>
+            {% endfor %}
+        </div>
+
+        <!-- Правый блок -->
+        <div class="col-md-8 d-flex justify-content-center align-items-center" style="height: 80vh;">
+            <p class="text-muted fs-4">Select a chat to start messaging</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

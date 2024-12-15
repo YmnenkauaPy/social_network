@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.views.generic import View
 from posts import forms
 from posts import models
-import json
+import json, os
 
 def create_post(request):
     if request.method == 'POST':
@@ -54,7 +54,11 @@ def edit_post(request, pk):
 def delete_post(request, pk):
     post = get_object_or_404(models.Post, id=pk)
 
-    if request.method == 'POST':  
+    if request.method == 'POST': 
+        if post.content:
+            file_path = post.content.path
+            if os.path.isfile(file_path):
+                os.remove(file_path) 
         post.delete()
         return redirect('profile', user_id = request.user.id)  
 

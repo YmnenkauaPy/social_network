@@ -45,7 +45,7 @@ def main(request):
         if post.creator not in user_posts:
             user_posts[post.creator] = []
         user_posts[post.creator].append(post)
- 
+
     return render(request, 'registration/main.html', {
         'user_posts': user_posts,
         'friends': friends,

@@ -1,17 +1,77 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="notifications-container">
-    <h1>Notifications for {{ custom_user.username }}</h1>
-
+<div class="notifications-container container py-4 mt-5">
+    <h1>Notifications for {{ custom_user.username }}</h1>   
+    <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ notification.id }}">
+        Delete <b>all</b> notifications
+    </button>
+    
+    <!-- Модальное окно удаления -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteLabel">Confirm deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete ALL these notifications? You can't undo it.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'clear_notifications' %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     {% if notifications.exists %}
-        <ul class="notification-list">
+        <ul class="list-unstyled">
             {% for notification in notifications.all %}
-                <li class="notification-item">
+                <li class="notification-item mb-3 p-3 border-bottom">
                     <div class="notification-details">
-                        <h3>{{ notification.name }}</h3>
+                        <h3 class="h5 mb-2">{{ notification.name }}</h3>
                         <p>{{ notification.description }}</p>    
                         <small>{{ notification.created_at }}</small>
+                        <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ notification.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                         <!-- Модальное окно удаления -->
+                         <div class="modal fade" id="confirmDeleteModal{{ notification.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ notification.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmDeleteLabel{{ notification.id }}">Confirm deletion</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete this notification? You can't undo it.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form action="{% url 'delete_notification' notification.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if notification.sender != notification.receiver and notification.name == 'Friends' and notification.answer is None %}
+                            <form action="{% url 'accept_friend_request' notification.id %}" method="POST" class="accept-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                            </form>
+                            <form action="{% url 'reject_friend_request' notification.id %}" method="POST" class="reject-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </li>
             {% endfor %}
@@ -20,101 +80,41 @@
         <p>No notifications found.</p>
     {% endif %}
 </div>
+<script>
+    document.querySelectorAll('.accept-form, .reject-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
 
+            const url = this.getAttribute('action');
+            const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    this.parentElement.innerHTML = `<p>${data.message}</p>`;
+                } else {
+                    console.error('Error:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Request failed', error);
+            });
+        });
+    });
+
+</script>
 <style>
     .notifications-container {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 800px;
         background-color: #f9f9f9;
         border: 1px solid #ddd;
         border-radius: 8px;
-    }
-    .notification-list {
-        list-style-type: none;
-        padding: 0;
-    }
-    .notification-item {
-        padding: 10px;
-        margin-bottom: 10px;
-        border-bottom: 1px solid #eee;
-    }
-    .notification-item:last-child {
-        border-bottom: none;
-    }
-    .notification-details h3 {
-        margin: 0 0 5px;
-        font-size: 18px;
-    }
-    .notification-details p {
-        margin: 5px 0;
-    }
-    .notification-status {
-        margin-top: 10px;
-        font-style: italic;
-        font-size: 14px;
-    }
-    .status-read {
-        color: green;
-    }
-    .status-unread {
-        color: red;
-    }
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f7f8;
-        margin: 0;
-        padding: 20px;
-    }
-
-    .form-container {
-        border: 1px solid black;
-        padding: 20px;
-        position: relative;
-        max-width: 400px;
-        margin: 50px auto; /* Center vertically with a margin */
-        text-align: center;
-        background-color: #ffffff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-    }
-
-    .form-container h2 {
-        margin-bottom: 20px;
-    }
-
-    button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 10px 15px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-
-    button:hover {
-        background-color: #0056b3;
-    }
-
-    .notifications-container {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 800px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-    }
-
-    .notification-list {
-        list-style-type: none;
-        padding: 0;
-    }
-
-    .notification-item {
-        padding: 10px;
-        margin-bottom: 10px;
-        border-bottom: 1px solid #eee;
     }
 
     .notification-item:last-child {
