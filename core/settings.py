@@ -26,8 +26,7 @@ SECRET_KEY = 'django-insecure-r#g$7cn==m$0c0xvn*@mui47-1xv)&xz_ru-df6nr60-q#l$6j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['192.168.0.106']
 
 # Application definition
 
@@ -37,12 +36,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'authentication',
     'profile_',
     'posts',
     'notifications',
     'chats',
+    'channels',
+    
 ]
 
 MIDDLEWARE = [
@@ -75,7 +77,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
+ASGI_APPLICATION = 'core.asgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

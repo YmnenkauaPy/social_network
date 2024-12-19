@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4" >
+<input type="hidden" id="user" value="{{ request.user.id }}">
+<div class="container mt-4">
     <div class="row">
         <!-- Список чатов слева -->
         <div class="col-md-4 border-end" style="margin-top: 50px; margin-left: -105px; height: calc(100vh - 50px);">
-            {% for name, chat in chats.items %}
-                <a href="" class="text-decoration-none text-dark">
+            {% for chat in chats %}
+                <a href="#" class="text-decoration-none text-dark chat-selector" 
+                   data-chat-id="{{ chat.chat.id }}">
                     <div class="card mb-2 border border-dark">
                         <div class="card-body">
-                            <h5 class="card-title mb-1">{{ name }}</h5>
-                            <!-- Последнее сообщение -->
-                            <p class="card-text text-muted">Последнее сообщение будет здесь</p>
+                            <h5 class="card-title mb-1">{{ chat.chat_name }}</h5>
+                            <p class="card-text text-muted">{{chat.last_message}}</p>
                         </div>
                     </div>
                 </a>
@@ -21,9 +22,168 @@
         </div>
 
         <!-- Правый блок -->
-        <div class="col-md-8 d-flex justify-content-center align-items-center" style="height: 80vh;">
-            <p class="text-muted fs-4">Select a chat to start messaging</p>
+        <div class="col-md-8 d-flex justify-content-center align-items-center" style="height: 80vh;" id="chat-display">
+            <p class="text-muted fs-4" id="select-chat-message">Select a chat to start messaging</p>
         </div>
     </div>
 </div>
+
+<script>  
+document.addEventListener('DOMContentLoaded', () => {
+    const chatSelectors = document.querySelectorAll('.chat-selector');
+    const chatDisplay = document.getElementById('chat-display');
+    let socket;
+
+    // Инициализация событий для выбора чата
+    chatSelectors.forEach(chat => {
+        chat.addEventListener('click', function(event) {
+            event.preventDefault();
+            const chatId = this.getAttribute('data-chat-id');
+            loadChat(chatId);
+        });
+    });
+
+    function loadChat(chatId) {
+        chatDisplay.innerHTML = '<p class="text-muted fs-5">Loading chat...</p>';
+        const user = document.getElementById('user').getAttribute('value')
+
+        fetch(`/get/chat/${chatId}/`)
+            .then(response => response.text())
+            .then(data => {
+                chatDisplay.innerHTML = data;
+                initializeWebSocket(chatId, user);
+                initializeMessageForm();
+                loadMessages(chatId, user);
+
+                const chatScroll = document.getElementById('chat-scroll');
+                if (chatScroll) {
+                    chatScroll.scrollTop = chatScroll.scrollHeight;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading chat:', error);
+                chatDisplay.innerHTML = '<p class="text-danger">Failed to load chat.</p>';
+            });
+    }
+
+    function initializeWebSocket(chatId, user) {
+        socket = new WebSocket(`ws://${window.location.host}/ws/chat/${chatId}/`);
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const chatLog = document.getElementById('chat-log');
+            const isOwnMessage = data.sender_id === Number(user); 
+
+            let messageElement;
+
+            if (isOwnMessage) {
+                messageElement = `
+                    <div class="d-flex align-items-start justify-content-end mb-2">
+                        <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                            <p class="mb-0">${data.content}</p>
+                            <small class="text-muted d-block text-end">${data.sent_at}</small>
+                        </div>
+                        <img src="{{ request.user.profile_picture.url }}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                    </div>
+                `;
+            } else {
+                messageElement = `
+                    <div class="d-flex align-items-start">
+                        <img src="${data.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                        <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                            <p class="mb-1 fw-bold">${data.sender_name}</p>
+                            <p class="mb-0">${data.content}</p>
+                            <small class="text-muted d-block text-end">${data.sent_at}</small>
+                        </div>
+                    </div>
+                `;
+            }
+
+            chatLog.innerHTML += messageElement;
+
+            const chatScroll = document.getElementById('chat-scroll');
+            chatScroll.scrollTop = chatScroll.scrollHeight;
+        };
+    }
+
+    function loadMessages(chatId, user) {
+        fetch(`/get/messages/${chatId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const chatLog = document.getElementById('chat-log');
+                chatLog.innerHTML = ''; // Очистка старых сообщений
+
+                if (data.messages.length === 0) {
+                    chatLog.innerHTML = '<p class="text-muted">No messages yet.</p>';
+                } else {
+                    data.messages.forEach(msg => {
+                        const isOwnMessage = msg.sender_id === Number(user); 
+                        let messageElement; 
+
+                        if (isOwnMessage) {
+                            messageElement = `
+                                <div class="d-flex align-items-start justify-content-end mb-2">
+                                    <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                                        <p class="mb-0">${msg.content}</p>
+                                        <small class="text-muted d-block text-end">${msg.sent_at}</small>
+                                    </div>
+                                    <img src="{{ request.user.profile_picture.url }}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                </div>
+                            `;
+                        } else {
+                            messageElement = `
+                                <div class="d-flex align-items-start mb-2">
+                                    <img src="${msg.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                                        <p class="mb-1 fw-bold">${msg.sender_name}</p>
+                                        <p class="mb-0">${msg.content}</p>
+                                        <small class="text-muted d-block text-end">${msg.sent_at}</small>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        chatLog.innerHTML += messageElement;
+                    });
+                }
+                const chatScroll = document.getElementById('chat-scroll');
+                chatScroll.scrollTop = chatScroll.scrollHeight;
+                
+            })
+            .catch(error => console.error('Error loading messages:', error));
+    }
+
+
+    function initializeMessageForm() {
+        const form = document.getElementById('message-form');
+        const input = document.querySelector('#chat-message-input');
+        const chatId = document.getElementById('chat_id').getAttribute('name');
+
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                sendMessage(input);
+            });
+
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    sendMessage(input);
+                }
+            });
+        }
+
+        function sendMessage(input) {
+            const message = input.value.trim();
+
+            if (message && socket) {
+                socket.send(JSON.stringify({ message: message }));
+                input.value = ''; // Очистить поле ввода
+            }
+        }
+    }
+});
+
+</script>
+
 {% endblock %}
+

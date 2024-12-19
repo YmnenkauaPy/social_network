@@ -9,11 +9,26 @@ class Message(models.Model):
     
 class Chat(models.Model):
     people = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name = 'people_in_chat')
-
     messages = models.ManyToManyField(Message, related_name='messages_of_chat', blank=True, null=True)
 
-    def get_other_person_name(self, user):
-        other_people = self.people.exclude(id=user.id)
-        if other_people.exists():
-            return other_people.first().username  
-        return "Unknown"
+    def get_user_chat_name(self, user):
+        # Получить персонализированное имя чата для пользователя
+        chat_name = self.chatnames.filter(user=user).first()
+        return chat_name.name
+
+    def get_another_person(self, user):
+        people = self.people.all() 
+        another_person = people.exclude(id=user.id)
+
+        if another_person.exists():
+            return another_person.first() 
+
+        return None  
+
+class ChatName(models.Model):
+    chat = models.ForeignKey(Chat, related_name='chatnames', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='chatnames', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)  # Персонализированное имя чата
+
+    class Meta:
+        unique_together = ('chat', 'user')

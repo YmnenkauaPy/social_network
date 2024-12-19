@@ -1,65 +1,70 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from profile_ import forms
 from authentication.models import CustomUser
 from posts.models import Post
+from chats.models import Chat
+from notifications.models import Notification
+
 from django.http import JsonResponse
-from profile_ import forms
 from django.contrib.sessions.models import Session
 from django.utils.timezone import now
 from datetime import timedelta
-from notifications.models import Notification
+from django.db.models import Q
 import os
 
-def get_last_seen_text(user):
-    if user.is_online:
-        return "online"
+# def get_last_seen_text(user):
+#     if user.is_online:
+#         return "online"
     
-    if not user.last_activity:
-        return "Last seen: unknown" 
+#     if not user.last_activity:
+#         return "Last seen: unknown" 
 
-    time_diff = now() - user.last_activity
+#     time_diff = now() - user.last_activity
 
-    if time_diff < timedelta(minutes=1):
-        return "Last seen a few seconds ago"
+#     if time_diff < timedelta(minutes=1):
+#         return "Last seen a few seconds ago"
     
-    elif time_diff < timedelta(hours=1):
-        minutes = time_diff.seconds // 60
-        return f"Last seen {minutes} minute{'s' if minutes > 1 else ''} ago"
+#     elif time_diff < timedelta(hours=1):
+#         minutes = time_diff.seconds // 60
+#         return f"Last seen {minutes} minute{'s' if minutes > 1 else ''} ago"
     
-    elif time_diff < timedelta(days=1):
-        hours = time_diff.seconds // 3600
-        return f"Last seen {hours} hour{'s' if hours > 1 else ''} ago"
+#     elif time_diff < timedelta(days=1):
+#         hours = time_diff.seconds // 3600
+#         return f"Last seen {hours} hour{'s' if hours > 1 else ''} ago"
     
-    elif time_diff < timedelta(days=7):
-        days = time_diff.days
-        return f"Last seen {days} day{'s' if days > 1 else ''} ago"
+#     elif time_diff < timedelta(days=7):
+#         days = time_diff.days
+#         return f"Last seen {days} day{'s' if days > 1 else ''} ago"
     
-    elif time_diff < timedelta(days=365):
-        weeks = time_diff.days // 7
-        return f"Last seen {weeks} week{'s' if weeks > 1 else ''} ago"
+#     elif time_diff < timedelta(days=365):
+#         weeks = time_diff.days // 7
+#         return f"Last seen {weeks} week{'s' if weeks > 1 else ''} ago"
     
-    else:
-        years = time_diff.days // 365
-        return f"Last seen {years} year{'s' if years > 1 else ''} ago"
+#     else:
+#         years = time_diff.days // 365
+#         return f"Last seen {years} year{'s' if years > 1 else ''} ago"
     
     
 def is_user_online(user):
     sessions = Session.objects.filter(expire_date__gte=now())
     for session in sessions:
         data = session.get_decoded()
+        print(data.get('_auth_user_id'), str(user.id))
         if data.get('_auth_user_id') == str(user.id):
             user.is_online = True
             user.last_activity = now()
             user.save(update_fields=['last_activity'])
             return True
+    
     user.is_online = False
     return False
 
 def view_profile(request, user_id):
     user = CustomUser.objects.get(id=user_id)
-    is_user_online(user)
-    online = get_last_seen_text(user)
+    # is_user_online(user)
+    # online = get_last_seen_text(user)
     posts = Post.objects.filter(creator=user.id)
-    return render(request, 'profile/profile_view.html', {'custom_user':user, 'online':online, "posts":posts})
+    return render(request, 'profile/profile_view.html', {'custom_user':user, "posts":posts, 'is_creator': {post.id: post.creator.id == request.user.id for post in posts}})
 
 def update_profile(request):
     user = CustomUser.objects.get(id=request.user.id)
@@ -94,28 +99,53 @@ def be_friends(request, to_whom, from_whom):
         from_whom = CustomUser.objects.get(id=from_whom)
 
         if to_whom.friends.filter(id=from_whom.id).exists():
-            # Если уже друзья, удаляем из друзей
+            # Удаляем из друзей
             to_whom.friends.remove(from_whom)
             from_whom.friends.remove(to_whom)
+
+            Notification.objects.create(
+                name='Friends',
+                description=f"{from_whom.username} stopped your friendship!",
+                receiver=to_whom,
+                sender=from_whom
+            )
+            Notification.objects.create(
+                name='Friends',
+                description=f"You stopped your friendship with {to_whom.username}!",
+                receiver=from_whom,
+                sender=from_whom
+            )
+
             status = 'unfriend'
 
-            notif = Notification(name='Friends', description=f"{from_whom.username} stopped your friendship!", receiver=to_whom, sender=from_whom)
-            notif.save() 
+            # Удаляем чат, если он существует
+            chats_to_delete = Chat.objects.filter(
+                people=from_whom
+            ).filter(
+                people=to_whom
+            )
 
-            notif = Notification(name='Friends', description=f"You stop your friendship with {to_whom.username}!", receiver=from_whom, sender=from_whom)
-            notif.save() 
-
-            status = 'unfriend'
+            # Удалить найденные чаты
+            chats_to_delete.delete()
         else:
-            notif = Notification(name='Friends', description=f"{from_whom.username} sent you a friend's request!", receiver=to_whom, sender=from_whom)
-            notif.save() 
-
-            notif = Notification(name='Friends', description=f"You sent to {to_whom.username} a friend's request!", receiver=from_whom, sender=from_whom)
-            notif.save() 
-
+            # Отправляем запрос на дружбу
+            Notification.objects.create(
+                name='Friends',
+                description=f"{from_whom.username} sent you a friend's request!",
+                receiver=to_whom,
+                sender=from_whom
+            )
+            Notification.objects.create(
+                name='Friends',
+                description=f"You sent a friend's request to {to_whom.username}!",
+                receiver=from_whom,
+                sender=from_whom,
+                answer=False
+            )
             status = 'sent'
 
-        return JsonResponse({'status':'ok', 'friend_status':status})
+        return JsonResponse({'status': 'ok', 'friend_status': status})
+
 
 def search_for_users(request):
     search = request.GET.get('search', '') 
@@ -124,20 +154,34 @@ def search_for_users(request):
     users_ = {}
 
     for user in users:
+        is_friend = request.user.friends.filter(id=user.id).exists()
         notification = Notification.objects.filter(receiver=user, sender=request.user, name='Friends').order_by('-created_at').first()
+
+        if notification and not is_friend and not notification.answer:
+            users_[user] = 'Request has been sent'
+        elif is_friend:
+            users_[user] = 'Unfriend'
+        else:
+            users_[user] = 'Add Friend'
+    
+    return render(request, 'profile/search_results.html', {'users': users_, 'type': 'results of searching'})
+
+def related_users(request, user_id, relation_type):
+    user = CustomUser.objects.get(id=user_id)
+    related_users = getattr(user, relation_type).all()
+
+    users_ = {}
+
+    for user in related_users:
+        notification = Notification.objects.filter(receiver=user, sender=request.user, name='Friends', description__icontains='sent').order_by('-created_at').first()
         if notification and not request.user in user.friends.all():
             users_[user] = 'Request has been sent'
         elif request.user in user.friends.all():
             users_[user] = 'Unfriend'
         else:
             users_[user] = 'Friend'
-    
-    return render(request, 'profile/search_results.html', {'users': users_, 'type':'results of searching'})
 
-def related_users(request, user_id, relation_type):
-    user = CustomUser.objects.get(id=user_id)
-    related_users = getattr(user, relation_type).all()
-    return render(request, 'profile/related_users.html', {'users': related_users, 'type':relation_type})
+    return render(request, 'profile/related_users.html', {'users': users_, 'type':relation_type})
 
 def toggle_follow_user(request, user_id):
     if request.method == 'POST':

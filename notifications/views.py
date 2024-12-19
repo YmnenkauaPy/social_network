@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from authentication.models import CustomUser
 import notifications.models as m
-from chats.models import Chat
+from chats.models import Chat, ChatName
 from django.http import JsonResponse
 
 def view_notifications(request, user_id):
@@ -32,9 +32,14 @@ def accept_friend_request(request, notification_id):
             chat = Chat()
             chat.save()
             chat.people.add(sender, receiver)
-            print(chat)
 
-            notif = m.Notification(name='Friends', description=f"{receiver} accepted your friend's reuqest!", receiver=sender, sender=receiver)
+            chatname = ChatName(chat=chat, user=sender, name=receiver.username)
+            chatname.save()
+            
+            chatname = ChatName(chat=chat, user=receiver, name=sender.username)
+            chatname.save()
+
+            notif = m.Notification(name='Friends', description=f"{receiver} accepted your friend's request!", receiver=sender, sender=receiver)
             notif.save() 
 
             return JsonResponse({'status': 'ok', 'message': 'Friend request accepted'})

@@ -37,6 +37,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'assets/demo/chart-area-demo.js' %}"></script>
     <script src="{% static 'assets/demo/chart-bar-demo.js' %}"></script>
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+    </style>
     <script>
         function submitPostForm(event) {
             event.preventDefault(); 
@@ -131,6 +136,12 @@
                             <div class="sb-nav-link-icon"><i class="bi bi-chat-text"></i></div>
                             Chats
                         </a>
+                        <a class="nav-link" id="theme-toggle-btn">
+                            <div class="sb-nav-link-icon">
+                                <i id="theme-icon" class="fas fa-sun"></i>
+                            </div>
+                            Theme
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -150,6 +161,29 @@
         }
 
         setInterval(fetchUnreadCount, 60000);
+
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            const currentTheme = body.classList.contains('bg-dark') ? 'dark' : 'light';
+            
+            if (currentTheme === 'dark') {
+                // Переключаем на светлую тему
+                body.classList.remove('bg-dark', 'text-light');
+                body.classList.add('bg-light', 'text-dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                // Переключаем на темную тему
+                body.classList.remove('bg-light', 'text-dark');
+                body.classList.add('bg-dark', 'text-light');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+
+        // Добавляем обработчик события для кнопки
+        document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
     </script>
     
 </body>
