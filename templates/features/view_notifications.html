@@ -29,7 +29,7 @@
         </div>
     </div>
     {% if notifications.exists %}
-        <ul class="list-unstyled">
+        <ul class="list-unstyled" id="notification-list">
             {% for n in notifications.all %}
                 <li class="notification-item mb-3 p-3 border-bottom">
                     <div class="notification-details">

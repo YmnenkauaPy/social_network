@@ -8,6 +8,7 @@ urlpatterns = [
     path('share/post/<int:pk>', views.share_post, name='share_post'),
     path('view/post/<int:post_id>/', views.PostDetailView.as_view(), name='post_detail'),
     path('comment/like/<int:pk>/', views.CommentLikeToggle.as_view(), name='comment_like_toggle'),
+    path('post/like/<int:pk>/', views.PostLikeToggle.as_view(), name='post_like_toggle'),
     path('edit/comment/<int:comment_id>/', views.edit_comment, name='comment_edit'),
     path('delete/comment/<int:comment_id>', views.delete_comment, name='comment_delete'),
 ]

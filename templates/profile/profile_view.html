@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% load static %}
 {% load custom_tags %}
 <div class="profile-container" style="margin-top: 20px;">
     <div class="profile-head">
@@ -24,16 +25,30 @@
     </div>
 
     {% if custom_user.id != user.id %}
-        <form method="POST" action="{% url 'follow_user' custom_user.id %}" class="follow-form" data-user-id="{{ custom_user.id }}">
-            {% csrf_token %}
-            <button type="submit" class="follow-btn">
-                {% if custom_user in user.followings.all %}
-                    Unfollow
-                {% else %}
-                    Follow
-                {% endif %}
-            </button>
-        </form>
+        <div class="ml-auto d-flex">
+            <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm follow-btn mr-3">
+                    {% if custom_user in user.followings.all %}
+                        Unfollow
+                    {% else %}
+                        Follow
+                    {% endif %}
+                </button>
+            </form>
+            
+            <form action="{% url 'be_friends' custom_user.id user.id %}" method="POST" class="friends-form" data-user-id="{{ custom_user.id }}">
+                {% csrf_token %}
+                <button type="submit" 
+                    class="btn btn-sm friends-btn 
+                    {% if status == 'Request has been sent' %}btn-secondary{% 
+                        elif status == 'Friend' %}btn-danger{% 
+                        else %}btn-primary{% endif %}" 
+                    {% if status == 'Request has been sent' %}disabled{% endif %}>
+                    {{ status }}
+                </button>
+            </form>
+        </div>
     {% endif %}
 
     {% if custom_user.id == user.id %}
@@ -85,6 +100,20 @@
             <div class="col mb-5">
                 <div class="card h-100">
                 {% if post.content %}
+                    {% if post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp" %}
+                        <img class = "card-img-top" src="{{ post.content.url }}">
+                    {% elif post.content.url|endswith:".mp4" %}
+                        <div class="ratio ratio-16x9">
+                            <video width="320" height="240" controls>
+                                <source src="{{ post.content.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    {% else %}
+                        {% with post.content.url|get_file_icon as file_icon %}
+                            <img src="{% static file_icon %}" alt="File Icon" class="card-img-top">
+                        {% endwith %}
+                    {% endif %}
                     {% include './post_content.html' %}
                 {% elif post.link %}
                     {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
@@ -110,6 +139,86 @@
 
 
 <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const followForms = document.querySelectorAll('.follow-form');
+        const friendsForms = document.querySelectorAll('.friends-form');
+
+        followForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const url = this.getAttribute('action');
+                const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        const button = this.querySelector('.follow-btn');
+                        button.textContent = (data.follow_status === 'followed') ? 'Unfollow' : 'Follow';
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Request failed', error);
+                });
+            });
+        });
+
+        friendsForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const url = this.getAttribute('action');
+                const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        const button = this.querySelector('.friends-btn');
+
+                        if (data.friend_status === 'sent') {
+                            button.textContent = 'Request has been sent';
+                            button.classList.remove('btn-primary', 'btn-danger');
+                            button.classList.add('btn-secondary');
+                            button.disabled = true; // Отключаем только для этого статуса
+                        } else if (data.friend_status === 'friend') {
+                            button.textContent = 'Unfriend';
+                            button.classList.remove('btn-primary', 'btn-secondary');
+                            button.classList.add('btn-danger');
+                            button.disabled = false;
+                        } else if (data.friend_status === 'unfriend') {
+                            button.textContent = 'Add Friend';
+                            button.classList.remove('btn-secondary', 'btn-danger');
+                            button.classList.add('btn-primary');
+                            button.disabled = false;
+                        }
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Request failed', error);
+                });
+            });
+        });
+
+    });
+    
     const socket = new WebSocket('ws://' + window.location.host + '/ws/user_status/');
 
     socket.onmessage = function(e) {
@@ -149,8 +258,8 @@
         }
     }
 
-    function showCopyNotification() {
-        const notification = document.getElementById('copy-notification');
+    function showCopyNotification(post_id) {
+        const notification = document.getElementById(`copy-notification-${post_id}`);
         notification.style.display = 'block'; // Show the notification
                 
                 // Hide the notification after 2 seconds
@@ -173,7 +282,7 @@
                 console.warn('API буфера обмена недоступно');
             }
 
-            showCopyNotification();
+            showCopyNotification(post_id);
             $('#shareModal' + post_id).modal('hide');  
         } else if (type === 'chats') {
             // Add logic for chats.

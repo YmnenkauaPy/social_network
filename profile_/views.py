@@ -10,6 +10,9 @@ from django.contrib.sessions.models import Session
 from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models import Q
+from channels.layers import get_channel_layer
+from authentication.views import count_unread_notifications  
+from asgiref.sync import async_to_sync
 import os
 
 # def get_last_seen_text(user):
@@ -144,6 +147,21 @@ def be_friends(request, to_whom, from_whom):
             )
             status = 'sent'
 
+        layer = get_channel_layer()
+        async_to_sync(layer.group_send)(
+            f"user_{from_whom.id}",  # Группа по id получателя
+            {
+                "type": "send_notification",  # тип события в consumers
+                'unread_count':count_unread_notifications(from_whom),
+            }
+        )
+        async_to_sync(layer.group_send)(
+            f"user_{to_whom.id}",  # Группа по id получателя
+            {
+                "type": "send_notification",  # тип события в consumers
+                'unread_count':count_unread_notifications(to_whom),
+            }
+        )
         return JsonResponse({'status': 'ok', 'friend_status': status})
 
 
@@ -215,6 +233,23 @@ def toggle_follow_user(request, user_id):
                 notification = Notification(name='Followed', description=f'You followed {user_to_toggle.username}', receiver=current_user)
                 notification.save() 
             current_user.save()
+
+            layer = get_channel_layer()
+            async_to_sync(layer.group_send)(
+                f"user_{user_to_toggle.id}",  # Группа по id получателя
+                {
+                    "type": "send_notification",  # тип события в consumers
+                    'unread_count':count_unread_notifications(user_to_toggle),
+                }
+            )
+
+            async_to_sync(layer.group_send)(
+                f"user_{current_user.id}",  # Группа по id получателя
+                {
+                    "type": "send_notification",  # тип события в consumers
+                    'unread_count':count_unread_notifications(current_user),
+                }
+            )
 
             return JsonResponse({'status': 'ok', 'follow_status': status})
 

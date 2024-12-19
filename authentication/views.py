@@ -5,7 +5,6 @@ from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, login
 from datetime import timedelta
 from django.utils.timezone import now
-from collections import defaultdict
 
 def custom_login_view(request):
     if request.method == "POST":
@@ -22,8 +21,8 @@ def custom_login_view(request):
     return render(request, "registration/login.html")
 
 
-def count_unread_notifications(request):
-    user = CustomUser.objects.get(id=request.user.id)
+def count_unread_notifications(user):
+    user = CustomUser.objects.get(id=user.id)
     unread = user.unread_notifications_count()
     return unread
 

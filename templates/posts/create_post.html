@@ -40,7 +40,7 @@
 
                 <div id="fileUploadSection" style="display:block;" class="mb-3">
                     <label for="id_content" class="form-label">Upload File:</label>
-                    <input type="file" name="content" id="id_content" class="form-control">
+                    <input type="file" name="content" id="id_content" accept = ".jpg,.png,.mp4,.pdf,.webp,.gif,.accdb,.docx,.pptx,.xlsx,.zip,.mp3,.txt" class="form-control">
                     {% if form.content.errors %}
                         <ul class="errorlist text-danger mt-2">
                             {% for error in form.content.errors %}

@@ -19,3 +19,15 @@ def extract_youtube_id(youtube_url):
 def file_extension(file_url):
     _, ext = os.path.splitext(file_url)
     return ext.lstrip('.') 
+
+@register.filter(name='get_file_icon')
+def get_file_icon(file_url):
+    extension = os.path.splitext(file_url)[1].lower().strip('.')
+    
+    icon_path = f"icons/{extension}.png"
+
+    return icon_path
+
+@register.filter
+def get_value(dictionary, key):
+    return dictionary.get(key)

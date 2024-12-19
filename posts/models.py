@@ -9,6 +9,14 @@ class Post(models.Model):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name = 'creator_of_post')
     created_at = models.DateTimeField(auto_now_add = True)
 
+class LikeToPost(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='like_to_post')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_liked_post')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comment_to_post')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='creator_of_comment')
@@ -22,3 +30,4 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ('comment', 'user')
+

@@ -29,6 +29,46 @@
 </div>
 
 <script>  
+function previewImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+        
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;  // Загружаем изображение для предварительного просмотра
+            preview.style.display = 'block';  // Показываем блок с изображением
+        };
+        reader.readAsDataURL(file);  // Читаем изображение как data URL
+    }
+}
+
+function removeImage() {
+    const preview = document.getElementById('image-preview');
+    const fileInput = document.getElementById('file-upload');
+    const previewImg = document.getElementById('preview-img');
+
+    preview.style.display = 'none';  // Скрываем блок с изображением
+    fileInput.value = '';  // Очищаем значение input
+    previewImg.src = '';  // Очищаем превью изображения
+}
+
+function replyToMessage(message) {
+    console.log('works')
+    // Показываем блок с сообщением
+    const replyContainer = document.getElementById("reply-message");
+    const replyContent = document.getElementById("reply-content");
+
+    replyContent.textContent = message;
+    replyContainer.style.display = "block";
+}
+
+function cancelReply() {
+    const replyContainer = document.getElementById("reply-message");
+    replyContainer.style.display = "none";
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const chatSelectors = document.querySelectorAll('.chat-selector');
     const chatDisplay = document.getElementById('chat-display');
@@ -78,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isOwnMessage) {
                 messageElement = `
                     <div class="d-flex align-items-start justify-content-end mb-2">
+                        <i class="bi bi-arrow-return-right" onclick="replyToMessage('${data.content}')" aria-hidden="true"></i>
                         <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                             <p class="mb-0">${data.content}</p>
                             <small class="text-muted d-block text-end">${data.sent_at}</small>
@@ -94,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="mb-0">${data.content}</p>
                             <small class="text-muted d-block text-end">${data.sent_at}</small>
                         </div>
+                        <i class="bi bi-arrow-return-left" onclick="replyToMessage('${data.content}')" aria-hidden="true"></i>
                     </div>
                 `;
             }
@@ -122,12 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (isOwnMessage) {
                             messageElement = `
                                 <div class="d-flex align-items-start justify-content-end mb-2">
+                                    <i class="bi bi-arrow-return-right" onclick="replyToMessage('${msg.content}')" aria-hidden="true"></i>
                                     <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                                         <p class="mb-0">${msg.content}</p>
                                         <small class="text-muted d-block text-end">${msg.sent_at}</small>
                                     </div>
                                     <img src="{{ request.user.profile_picture.url }}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                                 </div>
+                                
                             `;
                         } else {
                             messageElement = `
@@ -138,7 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <p class="mb-0">${msg.content}</p>
                                         <small class="text-muted d-block text-end">${msg.sent_at}</small>
                                     </div>
+                                    <i class="bi bi-arrow-return-left" onclick="replyToMessage('${msg.content}')" aria-hidden="true"></i>
                                 </div>
+                                
                             `;
                         }
 
@@ -151,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => console.error('Error loading messages:', error));
     }
-
 
     function initializeMessageForm() {
         const form = document.getElementById('message-form');

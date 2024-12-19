@@ -18,6 +18,7 @@
             <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ post.id }}">
                 <i class="bi bi-trash"></i>
             </button>
+        {% endif %}
             <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">
                 <i class="fas fa-share-alt"></i>
             </button>
@@ -36,7 +37,7 @@
                                 <button class="btn btn-outline-primary" onclick="share({{ post.id }}, 'link')">
                                     <i class="fas fa-link"></i> Link
                                 </button>
-                                <div id="copy-notification" class="alert alert-success" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1050; width: 300px;">
+                                <div id="copy-notification-{{post.id}}" class="alert alert-success" style="display: none; position: fixed; z-index: 1050; width: 1300px;">
                                     <strong>Copied!</strong> Link has been copied to the clipboard.
                                 </div>
                                 <button class="btn btn-outline-success" onclick="share({{ post.id }}, 'chats')">
@@ -72,6 +73,5 @@
                     </div>
                 </div>
             </div>
-        {% endif %}
     </div>
 </div>

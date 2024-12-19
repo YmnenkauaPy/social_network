@@ -12,13 +12,27 @@
         </div>
     </div>
     
-    <div id="context-menu" style="display: none; position: absolute; background-color: #fff; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); z-index: 1000;">
-        <ul style="list-style: none; margin: 0; padding: 0;">
-            <li id="reply-option" style="padding: 8px 12px; cursor: pointer;">Reply</li>
-        </ul>
-    </div>
 
-    <!-- Форма отправки сообщения -->
+    <div id="reply-message" style="display: none; background-color: #f1f1f1; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: 'Courier New', Courier, monospace; position: relative;">
+        <strong>Replying to:</strong> <span id="reply-content"></span>
+        <span class="close-reply" onclick="cancelReply()" style="position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>
+    </div>
+    
+    <label for="file-upload" class="btn btn-secondary me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <i class="bi bi-camera" aria-hidden="true"></i>
+    </label>
+    
+    <!-- Скрытый input для загрузки файла -->
+    <input type="file" id="file-upload" accept="image/*" style="display: none;" onchange="previewImage(event)">
+
+    <!-- Предпросмотр изображения -->
+    <div id="image-preview" class="mb-2" style="max-width: 100%; height: auto; display: none; position: relative;">
+        <img id="preview-img" src="" alt="Image Preview" style="max-width: 200px; max-height: 100px; object-fit: cover;">
+        
+        <!-- Кнопка для удаления изображения -->
+        <span id="remove-image" onclick="removeImage()" style="position: absolute; top: 5px; right: 5px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>
+    </div>
+    
     <form method="POST" class="d-flex align-items-center p-2 border-top" style="position: sticky; bottom: 0; background-color: #fff;" id="message-form">
         {% csrf_token %}
         <!-- Поле ввода сообщения -->
