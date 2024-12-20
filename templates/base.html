@@ -34,7 +34,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/datatables-simple-demo.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'assets/demo/chart-area-demo.js' %}"></script>
     <script src="{% static 'assets/demo/chart-bar-demo.js' %}"></script>
     <style>
@@ -83,6 +82,7 @@
                     {% else %}
                         <img src="{% static 'images/None.png' %}" class="profile-img">
                     {% endif %}  
+                    <span class="badge badge-danger" id="unread-count">{% if unread > 0 %} {{ unread }} {% endif %}</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     {% if user.is_authenticated %}
@@ -90,7 +90,7 @@
                         <li>
                             <a href="#" class="dropdown-item" onclick="submitPostForm(event)">
                                 Notifications
-                                <span class="badge badge-danger" id="unread-count">{{ unread }}</span>
+                                <span class="badge badge-danger" id="unread-count2">{% if unread > 0 %} {{ unread }} {% endif %}</span>
                             </a>
                             <form id="notificationsForm" action="{% url 'notifications' user.id %}" method="POST" style="display: none;">
                                 {% csrf_token %}
@@ -143,6 +143,10 @@
                         </a>
                     </div>
                 </div>
+                <div class="sb-sidenav-footer">
+                    <div class="small">Logged in as:</div>
+                    {{ request.user.username }}
+                </div>
             </nav>
         </div>
     </div>
@@ -152,24 +156,23 @@
     
 <script>
     const userId = document.getElementById('user').value;  // ID пользователя из шаблона
-    const socket = new WebSocket(
+    const NotificationsSocket = new WebSocket(
         `ws://${window.location.host}/ws/notifications/${userId}/`
     );
-    socket.onopen = () => {
-        console.log("WebSocket connected");
-        // Отправляем запрос на получение количества непрочитанных уведомлений
-        socket.send(JSON.stringify({
+    NotificationsSocket.onopen = () => {
+        NotificationsSocket.send(JSON.stringify({
             type: "fetch_count"
         }));
     };
-    socket.onmessage = (event) => console.log("Message received:", event.data);
-    socket.onclose = () => console.log("WebSocket disconnected");
 
+    const OnlineSocket = new WebSocket(
+        `ws://${window.location.host}/ws/user_status/${userId}/`
+    );
 
-    socket.onmessage = function(event) {
+    NotificationsSocket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        console.log('data',data)
         const unreadCountElement = document.getElementById('unread-count');
+        const unreadCountElement2 = document.getElementById('unread-count2');
         
         // Обновляем текст уведомлений
         const notificationList = document.getElementById('notification-list');
@@ -232,6 +235,7 @@
         }
         // Обновляем счётчик
         unreadCountElement.innerHTML = parseInt(unreadCountElement.innerHTML || '0') + 1;
+        unreadCountElement2.innerHTML = unreadCountElement.innerHTML
     };
 
 

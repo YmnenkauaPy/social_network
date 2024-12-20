@@ -13,7 +13,7 @@
         {% endif %}
     </div> 
     
-    <p class="status" id="online-status"></p>
+    <p class="status" id="online-status">{{online}}</p>
     <p class="mb-2"><strong>Details:</strong> {{ custom_user.details }}</p>
     <p class="mb-2"><strong>Data joined:</strong> {{ custom_user.date_joined|date:"F j, Y" }}</p>
 
@@ -25,10 +25,10 @@
     </div>
 
     {% if custom_user.id != user.id %}
-        <div class="ml-auto d-flex">
+        <div class="d-flex justify-content-center align-items-center">
             <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary btn-sm follow-btn mr-3">
+                <button type="submit" class="btn btn-primary btn-lg follow-btn mx-2">
                     {% if custom_user in user.followings.all %}
                         Unfollow
                     {% else %}
@@ -40,10 +40,10 @@
             <form action="{% url 'be_friends' custom_user.id user.id %}" method="POST" class="friends-form" data-user-id="{{ custom_user.id }}">
                 {% csrf_token %}
                 <button type="submit" 
-                    class="btn btn-sm friends-btn 
-                    {% if status == 'Request has been sent' %}btn-secondary{% 
-                        elif status == 'Friend' %}btn-danger{% 
-                        else %}btn-primary{% endif %}" 
+                class="btn btn-lg friends-btn mx-2
+                    {% if status == 'Request has been sent' %}btn-secondary
+                    {% elif status == 'Unfriend' %}btn-danger
+                    {% else %}btn-primary{% endif %}" 
                     {% if status == 'Request has been sent' %}disabled{% endif %}>
                     {{ status }}
                 </button>
@@ -139,7 +139,21 @@
 
 
 <script>
-        document.addEventListener('DOMContentLoaded', function() {
+    function getCsrfToken() {
+        // Функция для получения CSRF-токена из cookie
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                return cookie.substring(name.length + 1);
+            }
+        }
+        return null;
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
         const followForms = document.querySelectorAll('.follow-form');
         const friendsForms = document.querySelectorAll('.friends-form');
 
@@ -195,16 +209,17 @@
                             button.textContent = 'Request has been sent';
                             button.classList.remove('btn-primary', 'btn-danger');
                             button.classList.add('btn-secondary');
-                            button.disabled = true; // Отключаем только для этого статуса
-                        } else if (data.friend_status === 'friend') {
-                            button.textContent = 'Unfriend';
-                            button.classList.remove('btn-primary', 'btn-secondary');
-                            button.classList.add('btn-danger');
-                            button.disabled = false;
+                            button.disabled = true; 
+
                         } else if (data.friend_status === 'unfriend') {
                             button.textContent = 'Add Friend';
                             button.classList.remove('btn-secondary', 'btn-danger');
                             button.classList.add('btn-primary');
+                            button.disabled = false;
+                        } else {
+                            button.textContent = 'Unfriend';
+                            button.classList.remove('btn-primary', 'btn-secondary');
+                            button.classList.add('btn-danger');
                             button.disabled = false;
                         }
                     } else {
@@ -218,22 +233,6 @@
         });
 
     });
-    
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/user_status/');
-
-    socket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        document.getElementById('online-status').textContent = data.status
-    };
-
-    function updateStatus() {
-        socket.send(JSON.stringify({
-            action: 'update_status'
-        }));
-    }
-
-    setInterval(updateStatus, 1000); 
-
 
     document.getElementById('password1{{ user.id }}').addEventListener('input', checkPasswords);
     document.getElementById('password2{{ user.id }}').addEventListener('input', checkPasswords);
@@ -247,22 +246,21 @@
         if (password1 && password2) {
             if (password1 === password2) {
                 mismatchMessage.style.display = 'none';
-                deleteBtn.disabled = false;  // Разблокируем кнопку
+                deleteBtn.disabled = false; 
             } else {
                 mismatchMessage.style.display = 'block';
-                deleteBtn.disabled = true;  // Блокируем кнопку
+                deleteBtn.disabled = true;  
             }
         } else {
             mismatchMessage.style.display = 'none';
-            deleteBtn.disabled = true;  // Блокируем кнопку, если поля пустые
+            deleteBtn.disabled = true;  
         }
     }
 
     function showCopyNotification(post_id) {
         const notification = document.getElementById(`copy-notification-${post_id}`);
-        notification.style.display = 'block'; // Show the notification
-                
-                // Hide the notification after 2 seconds
+        notification.style.display = 'block'; 
+
         setTimeout(() => {
             notification.style.display = 'none';
         }, 2000);
@@ -276,18 +274,97 @@
                     await navigator.clipboard.writeText(link);
                     showCopyNotification();
                 } catch (err) {
-                    console.error('Ошибка при копировании в буфер обмена:', err);
+                    console.error('Error in copying to clipboard:', err);
                 }
             } else {
-                console.warn('API буфера обмена недоступно');
+                console.warn('API clip board is not allowed');
             }
 
             showCopyNotification(post_id);
             $('#shareModal' + post_id).modal('hide');  
         } else if (type === 'chats') {
-            // Add logic for chats.
-        } else if (type === 'groups') {
-            // Add logic for groups.
+            const csrfToken = getCsrfToken()
+            const response = await fetch('/get/chats/');
+            const chats = await response.json(); 
+
+            // Проверка на наличие чатов
+
+            const chatListItems = chats.chats.length > 0
+                ? chats.chats.map(chat => `
+                    <li class="list-group-item">
+                        <input type="radio" name="chat" value="${chat.id}" id="chat${chat.id}">
+                        <label for="chat${chat.id}">${chat.name}</label>
+                    </li>
+                `).join('')
+                : "<li class='list-group-item'><p>You don't have any chats to share with.</p></li>"; 
+
+            // Генерация модального окна
+            const modalContent = `
+                <div id="chatSelectionModal" class="modal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Choose chat</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <ul id="chatList" class="list-group">
+                                    ${chatListItems}
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button id="sendMessage" type="button" class="btn btn-primary">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Добавляем модальное окно в DOM
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+
+            // Показ модального окна
+            const modal = new bootstrap.Modal(document.getElementById('chatSelectionModal'));
+            modal.show();
+
+            // Логика отправки сообщения в выбранный чат
+            document.getElementById('sendMessage').addEventListener('click', async () => {
+                const selectedChat = document.querySelector('input[name="chat"]:checked');
+
+                if (selectedChat) {
+                    const chatId = selectedChat.value;
+
+                    try {
+                        const response = await fetch(`/send_to_chat/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken, 
+                            },
+                            body: JSON.stringify({
+                                post_id: post_id,
+                                chat_id: chatId,
+                            }),
+                        });
+
+                        if (response.ok) {
+                            console.log('Сообщение отправлено в чат!');
+                            modal.hide();
+                        } else {
+                            console.log('Ошибка при отправке сообщения.');
+                        }
+                    } catch (err) {
+                        console.error('Ошибка при отправке сообщения:', err);
+                    }
+                } else {
+                    alert('Выберите чат!');
+                }
+            });
+
+            // Удаление модального окна после закрытия
+            document.getElementById('chatSelectionModal').addEventListener('hidden.bs.modal', () => {
+                document.getElementById('chatSelectionModal').remove();
+            });
         }
     }
 

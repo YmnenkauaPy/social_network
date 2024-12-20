@@ -47,7 +47,7 @@ def accept_friend_request(request, notification_id):
             return JsonResponse({'status': 'error', 'message': 'Request already processed'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
 
-def reject_friend_request(request, notification_id):
+def reject_friend_request(request, notification_id, whom, who):
     if request.method == "POST":
         notification = get_object_or_404(m.Notification, id=notification_id)
 
@@ -56,6 +56,12 @@ def reject_friend_request(request, notification_id):
             # Помечаем запрос как отклонённый
             notification.answer = False
             notification.save()
+
+            notif = m.Notification(name='Friends', description=f"{who} rejected your friend's request!", receiver=whom, sender=who)
+            notif.save() 
+
+            notif = m.Notification(name='Friends', description=f"You rejected {whom}'s friend's request!", receiver=who, sender=whom)
+            notif.save() 
 
             return JsonResponse({'status': 'ok', 'message': 'Friend request rejected'})
         else:

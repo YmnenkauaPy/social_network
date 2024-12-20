@@ -1,7 +1,8 @@
+
 <div class="col-md-8 d-flex flex-column" style="height: 100vh; width: 100%;" id="chat-display">
     <!-- Заголовок чата -->
     <div class="chat-header p-2 border-bottom" style="height: 60px; margin-top: 110px;">
-        <h4 class="mb-0" style="font-size: 1.25rem;" name="{{ chat_id }}" id="chat_id">{{ chat_name }}</h4>
+        <h4 class="mb-0" style="font-size: 1.25rem;" name="{{ chat_id }}" id="chatId">{{ chat_name }}</h4>
         <small class="mb-0" style="font-size: 0.8rem;"><i>{{ last_seen }}</i></small>
     </div>
 
@@ -14,8 +15,10 @@
     
 
     <div id="reply-message" style="display: none; background-color: #f1f1f1; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: 'Courier New', Courier, monospace; position: relative;">
-        <strong>Replying to:</strong> <span id="reply-content"></span>
-        <span class="close-reply" onclick="cancelReply()" style="position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>
+        <a href="javascript:void(0)" onclick="findMessageThatWasReplied()">
+            <strong>Replying to:</strong> <span id="reply-content"></span>
+        </a>
+        <span class="close-reply" onclick="cancelReply()" style="position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>  
     </div>
     
     <label for="file-upload" class="btn btn-secondary me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">

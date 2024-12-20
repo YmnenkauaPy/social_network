@@ -6,68 +6,86 @@ from chats.models import Chat
 from notifications.models import Notification
 
 from django.http import JsonResponse
-from django.contrib.sessions.models import Session
 from django.utils.timezone import now
 from datetime import timedelta
-from django.db.models import Q
 from channels.layers import get_channel_layer
 from authentication.views import count_unread_notifications  
 from asgiref.sync import async_to_sync
-import os
+import os, json
 
-# def get_last_seen_text(user):
-#     if user.is_online:
-#         return "online"
+def get_last_seen_text(user):
+    if user.is_online:
+        return "online"
     
-#     if not user.last_activity:
-#         return "Last seen: unknown" 
+    if not user.last_activity:
+        return "Last seen: unknown" 
 
-#     time_diff = now() - user.last_activity
+    time_diff = now() - user.last_activity
 
-#     if time_diff < timedelta(minutes=1):
-#         return "Last seen a few seconds ago"
+    if time_diff < timedelta(minutes=1):
+        return "Last seen a few seconds ago"
     
-#     elif time_diff < timedelta(hours=1):
-#         minutes = time_diff.seconds // 60
-#         return f"Last seen {minutes} minute{'s' if minutes > 1 else ''} ago"
+    elif time_diff < timedelta(hours=1):
+        minutes = time_diff.seconds // 60
+        return f"Last seen {minutes} minute{'s' if minutes > 1 else ''} ago"
     
-#     elif time_diff < timedelta(days=1):
-#         hours = time_diff.seconds // 3600
-#         return f"Last seen {hours} hour{'s' if hours > 1 else ''} ago"
+    elif time_diff < timedelta(days=1):
+        hours = time_diff.seconds // 3600
+        return f"Last seen {hours} hour{'s' if hours > 1 else ''} ago"
     
-#     elif time_diff < timedelta(days=7):
-#         days = time_diff.days
-#         return f"Last seen {days} day{'s' if days > 1 else ''} ago"
+    elif time_diff < timedelta(days=7):
+        days = time_diff.days
+        return f"Last seen {days} day{'s' if days > 1 else ''} ago"
     
-#     elif time_diff < timedelta(days=365):
-#         weeks = time_diff.days // 7
-#         return f"Last seen {weeks} week{'s' if weeks > 1 else ''} ago"
+    elif time_diff < timedelta(days=365):
+        weeks = time_diff.days // 7
+        return f"Last seen {weeks} week{'s' if weeks > 1 else ''} ago"
     
-#     else:
-#         years = time_diff.days // 365
-#         return f"Last seen {years} year{'s' if years > 1 else ''} ago"
+    else:
+        years = time_diff.days // 365
+        return f"Last seen {years} year{'s' if years > 1 else ''} ago"
     
-    
-def is_user_online(user):
-    sessions = Session.objects.filter(expire_date__gte=now())
-    for session in sessions:
-        data = session.get_decoded()
-        print(data.get('_auth_user_id'), str(user.id))
-        if data.get('_auth_user_id') == str(user.id):
-            user.is_online = True
-            user.last_activity = now()
-            user.save(update_fields=['last_activity'])
-            return True
-    
-    user.is_online = False
-    return False
-
 def view_profile(request, user_id):
     user = CustomUser.objects.get(id=user_id)
-    # is_user_online(user)
-    # online = get_last_seen_text(user)
+    online = get_last_seen_text(user)
     posts = Post.objects.filter(creator=user.id)
-    return render(request, 'profile/profile_view.html', {'custom_user':user, "posts":posts, 'is_creator': {post.id: post.creator.id == request.user.id for post in posts}})
+    notification = Notification.objects.filter(receiver=user, sender=request.user, name='Friends').order_by('-created_at').first()
+
+    is_friend = request.user.friends.filter(id=user.id).exists()
+
+    if notification and not is_friend and notification.answer != True:
+        status = 'Request has been sent'
+    elif is_friend:
+        status = 'Unfriend'
+    else:
+        status = 'Add Friend'
+
+    return render(request, 'profile/profile_view.html', {'custom_user':user, 'status':status,
+                                                         "posts":posts, 'online':online, 
+                                                         'is_creator': {post.id: post.creator.id == request.user.id for post in posts}})
+
+def send_to_chat(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        chat_id = data.get('chat_id')
+        post_id = data.get('post_id')
+
+        try:
+            chat = Chat.objects.get(id=chat_id)
+            post = Post.objects.get(id=post_id)
+            chat.messages.create(content=f"http://192.168.0.106:8000/view/post/{post_id}", sender=request.user)
+            return JsonResponse({'success': True, 'message': 'Сообщение отправлено!'})
+        except Chat.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Чат не найден'})
+        except Post.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Пост не найден'})
+    return JsonResponse({'success': False, 'error': 'Некорректный запрос'})
+
+def get_chats(request):
+    chats = Chat.objects.filter(people=request.user)
+    chats_data = [{'id': chat.id, 'name': chat.get_user_chat_name(request.user)} for chat in chats]
+
+    return JsonResponse({'status':'ok', 'chats':chats_data})
 
 def update_profile(request):
     user = CustomUser.objects.get(id=request.user.id)

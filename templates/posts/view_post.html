@@ -109,7 +109,7 @@
                         id="{{ post.id }}"
                         class="me-2 p-0 border-0" 
                         onclick="toggleLike('post', this.id)">
-                        <i class="bi bi-heart" {% if user_liked_post %}style='color:red'{% endif %}></i> 
+                        <i {% if user_liked_post %}class="bi bi-heart-fill"{% else %}class="bi bi-heart"{% endif %} style='color:red'></i> 
                         <span>{{ post.like_to_post.count }}</span>
                     </button>
                     <p class="mt-3"><b>{{ post.creator }}</b> {% if post.description %}{{ post.description }}{% endif %}</p>
@@ -145,7 +145,6 @@
             if (response.ok) {
                 const result = await response.json()
 
-                // Создаем новую структуру комментария
                 const cardBody = document.getElementById('all_comments');
                 const commentDiv = document.createElement('div');
                 commentDiv.classList.add('mb-3', 'border-bottom', 'pb-2');
@@ -154,14 +153,14 @@
                 commentDiv.innerHTML = `
                     <p><b>${result.comment.creator}</b></p>
                     <p id="comment_content_${result.comment.id}" style="display:block">${result.comment.content}</p>
-                    <input type="text" name="content2_${result.comment.id}" id="content2" class="form-control" style="display:none" value="${result.comment.content}">
+                    <input type="text" name="content2" id="content2_${result.comment.id}" class="form-control" style="display:none" value="${result.comment.content}">
                     <div class="d-flex align-items-center">
                         <button 
                             type="button" 
                             id="${result.comment.id}"
-                            class="btn btn-sm btn-outline-success me-2"
-                            onclick="toggleLike("comment", ${result.comment.id})">
-                            <i class="bi bi-hand-thumbs-up"></i> <span>0</span>
+                            class="me-2 p-0 border-0"
+                            onclick="toggleLike('comment', ${result.comment.id})">
+                            <i {% if user_liked_comments|get_value:comment.id %}class="bi bi-hand-thumbs-up-fill"{% else %}class="bi bi-hand-thumbs-up"{% endif %} style='color:green'></i> <span>0</span>
                         </button>
                         
                         ${result.comment.creator_id == user ? `
@@ -273,16 +272,20 @@
 
                 if (isPost) {
                     if (data.liked) {
-                        icon.style.color = 'red'; 
+                        icon.classList.remove('bi-heart')
+                        icon.classList.add('bi-heart-fill')
                     } else {
-                        icon.style.color = ''; 
+                        icon.classList.remove('bi-heart-fill')
+                        icon.classList.add('bi-heart')
                     }
                 } else {
      
                     if (data.liked) {
-                        icon.style.color = 'green';
+                        icon.classList.remove('bi-hand-thumbs-up')
+                        icon.classList.add('bi-hand-thumbs-up-fill')
                     } else {
-                        icon.style.color = ''; 
+                        icon.classList.remove('bi-hand-thumbs-up-fill')
+                        icon.classList.add('bi-hand-thumbs-up')
                     }
                 }
                 likeButton.querySelector('span').textContent = data.likes_count;

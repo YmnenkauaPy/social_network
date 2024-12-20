@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <input type="hidden" id="user" value="{{ request.user.id }}">
 <div class="container mt-4">
     <div class="row">
@@ -8,11 +9,11 @@
         <div class="col-md-4 border-end" style="margin-top: 50px; margin-left: -105px; height: calc(100vh - 50px);">
             {% for chat in chats %}
                 <a href="#" class="text-decoration-none text-dark chat-selector" 
-                   data-chat-id="{{ chat.chat.id }}">
+                   data-chat-id="{{ chat.chat.id }}" id="chat_id">
                     <div class="card mb-2 border border-dark">
                         <div class="card-body">
                             <h5 class="card-title mb-1">{{ chat.chat_name }}</h5>
-                            <p class="card-text text-muted">{{chat.last_message}}</p>
+                            <p class="card-text text-muted" id = "last_message_{{chat.chat.id}}" value="{{ chat.last_message }}"></p>
                         </div>
                     </div>
                 </a>
@@ -28,7 +29,44 @@
     </div>
 </div>
 
-<script>  
+<script> 
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+    const isYesterday = new Date(now - 24 * 60 * 60 * 1000).toDateString() === date.toDateString();
+
+    const optionsTime = { hour: '2-digit', minute: '2-digit' }; // Формат времени (например, 14:30)
+    const optionsDate = { month: 'long', day: 'numeric', year: 'numeric' }; // Формат полной даты
+
+    if (isToday) {
+        return `Today, ${date.toLocaleTimeString([], optionsTime)}`;
+    } else if (isYesterday) {
+        return `Yesterday, ${date.toLocaleTimeString([], optionsTime)}`;
+    } else {
+        return `${date.toLocaleDateString('en-US', optionsDate)}, ${date.toLocaleTimeString([], optionsTime)}`;
+    }
+}
+
+// Функция для усечения текста
+function truncateText(text, maxLength) {
+    if (text.length > maxLength) {
+        return text.slice(0, maxLength) + '...';
+    }
+    return text;
+}
+
+const lastMessages = document.querySelectorAll('[id^="last_message_"]');
+
+lastMessages.forEach((messageElement) => {
+    const messageText = messageElement.getAttribute('value'); 
+    const truncatedText = truncateText(messageText, 25); 
+
+    messageElement.innerHTML = truncatedText; 
+});
+
+
 function previewImage(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('image-preview');
@@ -54,20 +92,97 @@ function removeImage() {
     previewImg.src = '';  // Очищаем превью изображения
 }
 
-function replyToMessage(message) {
-    console.log('works')
-    // Показываем блок с сообщением
-    const replyContainer = document.getElementById("reply-message");
-    const replyContent = document.getElementById("reply-content");
+function replyToMessage(messageId) {
+    const messageElement = document.getElementById(messageId);
+    const messageContent = messageElement ? messageElement.innerText : 'Message content not found';
 
-    replyContent.textContent = message;
-    replyContainer.style.display = "block";
+    const replyContent = document.getElementById('reply-content');
+
+    const truncatedText = truncateText(messageContent, 25);
+
+    replyContent.innerText = truncatedText;
+
+    const replyLink = document.querySelector('#reply-message a');
+    replyLink.setAttribute('data-message-id', messageId);
+
+    document.getElementById('reply-message').style.display = 'block';
+}
+
+function findMessageThatWasReplied(id=null) {
+    let messageElement
+    if (id === null) {
+        const messageId = document.querySelector('#reply-message a').getAttribute('data-message-id');
+        messageElement = document.getElementById(messageId);
+    } else {
+        messageElement = document.getElementById(`message-${id}`);
+    }
+
+    console.log(messageElement)
+
+    if (messageElement) {
+        messageElement.scrollIntoView({ behavior: 'smooth' });
+
+        const markElement = document.createElement('mark');
+        markElement.innerHTML = messageElement.innerHTML;
+        messageElement.innerHTML = ''; 
+        messageElement.appendChild(markElement); 
+
+
+        setTimeout(() => {
+            messageElement.innerHTML = markElement.innerHTML; 
+        }, 1000); 
+    } else {
+        console.log('Message not found');
+    }
 }
 
 function cancelReply() {
     const replyContainer = document.getElementById("reply-message");
     replyContainer.style.display = "none";
 }
+
+function liked(id) {
+    fetch(`/liked/message/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            const icon = document.getElementById(`icon_like_${id}`)
+
+            if (data.liked == '1') {
+                icon.classList.remove('bi-heart')
+                icon.classList.add('bi-heart-fill')
+            
+            } else {
+                icon.classList.remove('bi-heart-fill')
+                icon.classList.add('bi-heart')
+            }
+        })
+        .catch(error => {
+            console.error('Error loading like:', error);
+        });
+}
+
+function markMessageAsRead(messageId) {
+    fetch(`/mark-read/${messageId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const icon = document.getElementById(`read_${messageId}`);
+                icon.classList.remove('bi-check');
+                icon.classList.add('bi-all');
+            }
+        })
+        .catch(error => console.error('Error updating read status:', error));
+}
+
+const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const messageId = entry.target.id.split('-')[1]; 
+            markMessageAsRead(messageId);  
+            observer.unobserve(entry.target); 
+        }
+    });
+}, { threshold: 0.5 });
 
 document.addEventListener('DOMContentLoaded', () => {
     const chatSelectors = document.querySelectorAll('.chat-selector');
@@ -92,9 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 chatDisplay.innerHTML = data;
                 initializeWebSocket(chatId, user);
-                initializeMessageForm();
                 loadMessages(chatId, user);
-
+                initializeMessageForm();
+                
                 const chatScroll = document.getElementById('chat-scroll');
                 if (chatScroll) {
                     chatScroll.scrollTop = chatScroll.scrollHeight;
@@ -115,13 +230,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let messageElement;
 
+            let formattedContent = '';
+            const maxLength = 25;
+            for (let i = 0; i < data.content.length; i += maxLength) {
+                formattedContent += data.content.slice(i, i + maxLength) + '<br>';
+            }
+
+            const date = data.sent_at
+            const formattedDate = formatDate(date);
+            
+
+            let truncatedText;
+
+            if (data.replied_to_content) { 
+                truncatedText = truncateText(data.replied_to_content, 15);
+            }
+
             if (isOwnMessage) {
                 messageElement = `
                     <div class="d-flex align-items-start justify-content-end mb-2">
-                        <i class="bi bi-arrow-return-right" onclick="replyToMessage('${data.content}')" aria-hidden="true"></i>
+                        ${truncatedText ? `<a href="javascript:void(0)" onclick="findMessageThatWasReplied(${data.replied_to_id})"><div class="bg-light text-muted p-1 rounded">
+                            <small>Replied to: ${truncatedText}</small>
+                        </div></a>` : ''}
+                        <i class="bi bi-arrow-return-right" onclick="replyToMessage('message-${data.id}')" aria-hidden="true"></i>
+                        ${data.liked ? `<i class="bi bi-heart-fill mt-auto" style="color:red" onclick="liked(${data.id})" id="icon_like_${data.id}"></i>` 
+                        : `<i class="bi bi-heart mt-auto" style="color:red" onclick="liked(${data.id})" id="icon_like_${data.id}"></i>`}
+
                         <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
-                            <p class="mb-0">${data.content}</p>
-                            <small class="text-muted d-block text-end">${data.sent_at}</small>
+                            <p class="mb-0" id='message-${data.id}'>${formattedContent}</p>
+                            <div class="d-flex align-items-center justify-content-end mb-2">
+                                <small class="text-muted">${formattedDate}</small>
+                                ${data.read ? `<i class="bi bi-all ms-2" id="read_${data.id}"></i>` : `<i class="bi bi-check ms-2" id="read_${data.id}"></i>`}
+                            </div>
                         </div>
                         <img src="{{ request.user.profile_picture.url }}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                     </div>
@@ -132,18 +272,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         <img src="${data.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                         <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                             <p class="mb-1 fw-bold">${data.sender_name}</p>
-                            <p class="mb-0">${data.content}</p>
-                            <small class="text-muted d-block text-end">${data.sent_at}</small>
+                            <p class="mb-0" id='message-${data.id}'>${formattedContent}</p>
+
+                            <div class="d-flex align-items-center justify-content-end mb-2">
+                                <small class="text-muted">${formattedDate}</small>
+                                ${data.read ? `<i class="bi bi-all ms-2" id="read_${data.id}"></i>` : `<i class="bi bi-check ms-2" id="read_${data.id}"></i>`}
+                            </div>
                         </div>
-                        <i class="bi bi-arrow-return-left" onclick="replyToMessage('${data.content}')" aria-hidden="true"></i>
-                    </div>
-                `;
+                        <div class="mt-auto" onclick="liked(${data.id})">
+                            ${data.liked ? `<i class="bi bi-heart-fill" style="color:red" id="icon_like_${data.id}"></i>` : `<i class="bi bi-heart" style="color:red" id="icon_like_${data.id}"></i>`}
+                        </div>
+                        <i class="bi bi-arrow-return-left" data-message-id="${data.id}" onclick="replyToMessage('message-${data.id}')" aria-hidden="true"></i>
+                        ${truncatedText ? `<a href="javascript:void(0)" onclick="findMessageThatWasReplied(${data.replied_to_id})"><div class="bg-light text-muted p-1 rounded">
+                            <small>Replied to: ${truncatedText}</small>
+                        </div></a>` : ''}     
+                    </div>`;
             }
 
             chatLog.innerHTML += messageElement;
 
+            const newMessage = document.getElementById(`message-${msg.id}`);
+            observer.observe(newMessage);
+
             const chatScroll = document.getElementById('chat-scroll');
             chatScroll.scrollTop = chatScroll.scrollHeight;
+            
+            const chat_id = document.getElementById('chatId').getAttribute('name')
+            const lastMessage = document.getElementById(`last_message_${chat_id}`);
+
+            truncatedText = truncateText(data.content, 25); 
+            lastMessage.innerText = truncatedText; 
+            lastMessage.value = truncatedText; 
+        
+            document.getElementById('reply-message').style.display = 'none';
         };
     }
 
@@ -158,42 +319,77 @@ document.addEventListener('DOMContentLoaded', () => {
                     chatLog.innerHTML = '<p class="text-muted">No messages yet.</p>';
                 } else {
                     data.messages.forEach(msg => {
-                        const isOwnMessage = msg.sender_id === Number(user); 
-                        let messageElement; 
+                        const isOwnMessage = msg.sender_id === Number(user);
+                        let messageElement;
+
+                        let formattedContent = '';
+                        const maxLength = 25; 
+                        for (let i = 0; i < msg.content.length; i += maxLength) {
+                            formattedContent += msg.content.slice(i, i + maxLength) + '<br>';
+                        }
+
+                        const date = msg.sent_at
+                        const formattedDate = formatDate(date);
+
+                        let truncatedText;
+
+                        if (msg.replied_to_content) { 
+                            truncatedText = truncateText(msg.replied_to_content, 15);
+                        }
 
                         if (isOwnMessage) {
                             messageElement = `
                                 <div class="d-flex align-items-start justify-content-end mb-2">
-                                    <i class="bi bi-arrow-return-right" onclick="replyToMessage('${msg.content}')" aria-hidden="true"></i>
+                                    ${truncatedText ? `<a href="javascript:void(0)" onclick="findMessageThatWasReplied(${msg.replied_to_id})"><div class="bg-light text-muted p-1 rounded">
+                                        <small>Replied to: ${truncatedText}</small>
+                                    </div></a>` : ''}
+                                    <i class="bi bi-arrow-return-right" data-message-id="${msg.id}" onclick="replyToMessage('message-${msg.id}')" aria-hidden="true"></i>
+                                    ${msg.liked ? `<i class="bi bi-heart-fill mt-auto" style="color:red" onclick="liked(${msg.id})" id="icon_like_${msg.id}"></i>` 
+                                    : `<i class="bi bi-heart mt-auto" style="color:red" onclick="liked(${msg.id})" id="icon_like_${msg.id}"></i>`}
                                     <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
-                                        <p class="mb-0">${msg.content}</p>
-                                        <small class="text-muted d-block text-end">${msg.sent_at}</small>
+                                        <p class="mb-0" id="message-${msg.id}">${formattedContent}</p>
+                                        
+                                        <div class="d-flex align-items-center justify-content-end mb-2">
+                                            <small class="text-muted">${formattedDate}</small>
+                                            ${msg.read ? `<i class="bi bi-all ms-2" id="read_${msg.id}"></i>` : `<i class="bi bi-check ms-2" id="read_${msg.id}"></i>`}
+                                        </div>
                                     </div>
-                                    <img src="{{ request.user.profile_picture.url }}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                </div>
-                                
-                            `;
+                                    <img src="{{ request.user.profile_picture.url }}" alt="User Avatar" 
+                                    class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                </div>`;
                         } else {
                             messageElement = `
                                 <div class="d-flex align-items-start mb-2">
                                     <img src="${msg.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                                     <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                                         <p class="mb-1 fw-bold">${msg.sender_name}</p>
-                                        <p class="mb-0">${msg.content}</p>
-                                        <small class="text-muted d-block text-end">${msg.sent_at}</small>
+                                        <p class="mb-0" id="message-${msg.id}">${formattedContent}</p>
+
+                                        <div class="d-flex align-items-center justify-content-end mb-2">
+                                            <small class="text-muted">${formattedDate}</small>
+                                            ${msg.read ? `<i class="bi bi-all ms-2" id="read_${msg.id}"></i>` : `<i class="bi bi-check ms-2" id="read_${msg.id}"></i>`}
+                                        </div>
                                     </div>
-                                    <i class="bi bi-arrow-return-left" onclick="replyToMessage('${msg.content}')" aria-hidden="true"></i>
-                                </div>
-                                
-                            `;
-                        }
+                                    <div class="mt-auto" onclick="liked(${msg.id})">
+                                        ${msg.liked ? `<i class="bi bi-heart-fill" style="color:red" id="icon_like_${msg.id}"></i>` 
+                                        : `<i class="bi bi-heart" style="color:red" id="icon_like_${msg.id}"></i>`}
+                                    </div>
+                                    <i class="bi bi-arrow-return-left" data-message-id="${msg.id}" onclick="replyToMessage('message-${msg.id}')" aria-hidden="true"></i>
+                                    ${truncatedText ? `<a href="javascript:void(0)" onclick="findMessageThatWasReplied(${msg.replied_to_id})"><div class="bg-light text-muted p-1 rounded">
+                                        <small>Replied to: ${truncatedText}</small>
+                                    </div></a>` : ''}     
+                                </div>`;
+                        }   
 
                         chatLog.innerHTML += messageElement;
+
+                        const newMessage = document.getElementById(`message-${msg.id}`);
+                        observer.observe(newMessage);
                     });
                 }
+
                 const chatScroll = document.getElementById('chat-scroll');
                 chatScroll.scrollTop = chatScroll.scrollHeight;
-                
             })
             .catch(error => console.error('Error loading messages:', error));
     }
@@ -217,12 +413,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        function sendMessage(input) {
+        function sendMessage(input, messageId) {
             const message = input.value.trim();
-
+            var messageId = document.querySelector('#reply-message a').getAttribute('data-message-id');
+            if (messageId) {
+                messageId = messageId.replace(/\D/g, '')
+            }
             if (message && socket) {
-                socket.send(JSON.stringify({ message: message }));
-                input.value = ''; // Очистить поле ввода
+                socket.send(JSON.stringify({
+                    message: message,
+                    replied_to_id: messageId,
+                }));
+                input.value = ''; 
             }
         }
     }

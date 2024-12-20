@@ -17,10 +17,9 @@
                                 id="{{ comment.id }}"
                                 class="me-2 p-0 border-0" 
                                 onclick="toggleLike('comment', this.id)">
-                                <i class="bi bi-hand-thumbs-up" {% if user_liked_comments|get_value:comment.id %}style='color:green'{% endif %}></i> 
+                                <i {% if user_liked_comments|get_value:comment.id %}class="bi bi-hand-thumbs-up-fill"{% else %}class="bi bi-hand-thumbs-up"{% endif %} style='color:green'></i> 
                                 <span>{{ comment.like_to_comment.count }}</span
                             </button>
-                            
                             
                             {% if comment.creator == request.user %}
                                 <button type="button" id="edit_{{comment.id}}" class="btn btn-sm btn-warning me-2" style="display:block;" onclick="Edit(this.id, {{ comment.id }})">
