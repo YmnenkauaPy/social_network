@@ -20,7 +20,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     @database_sync_to_async
-    def create_message(self, user, chat_id, message_content, replied_to_id=None):
+    def create_message(self, user, chat_id, message_content='', file_content=None, replied_to_id=None):
         from . import models
         chat = models.Chat.objects.get(id=chat_id)
         replied_to = None
@@ -36,6 +36,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             content=message_content,
             replied_to=replied_to,
             liked=False,
+            file_content=file_content,
         )
         chat.messages.add(message)
         chat.save()
@@ -46,17 +47,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message_content = text_data_json['message']
         replied_to_id = text_data_json.get('replied_to_id')
+        file_content = text_data_json.get('file_content')
         user = self.scope['user'] 
 
         try:
-            message = await self.create_message(user, self.chat_id, message_content, replied_to_id)
+            message = await self.create_message(user, self.chat_id, message_content, file_content, replied_to_id)
 
             await self.channel_layer.group_send(
                 self.group_name,
                 {
                     'type': 'chat_message',
                     'id': message.id,
-                    'message': message.content,
+                    'message': message.content if message.content else '',
                     'replied_to_id': message.replied_to_id,
                     'replied_to_content': message.replied_to.content if message.replied_to else None,
                     'sent_at': message.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
@@ -65,6 +67,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'sender_profile_pic': user.profile_picture.url,
                     'liked':message.liked,
                     'read':message.read,
+                    'file_content': str(message.file_content) if message.file_content else None,
                 }
             )
         except Exception as e:
@@ -74,13 +77,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'id': event['id'],
-            'content': event['message'],
+            'content': event['message'] if event['message'] else '',
             'sent_at': event['sent_at'],
             'sender_id': event['sender_id'],
             'sender_name': event['sender_name'],
             'sender_profile_pic': event['sender_profile_pic'],
-            'replied_to_id': event['replied_to_id'] if  event['replied_to_id'] else None,
+            'replied_to_id': event['replied_to_id'] if event['replied_to_id'] else None,
             'replied_to_content': event['replied_to_content'] if  event['replied_to_content'] else None,
             'liked': event['liked'],
             'read':event['read'],
+            'file_content':event['file_content'] if event['file_content'] else None,
         }))

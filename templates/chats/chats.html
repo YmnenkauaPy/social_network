@@ -13,7 +13,8 @@
                     <div class="card mb-2 border border-dark">
                         <div class="card-body">
                             <h5 class="card-title mb-1">{{ chat.chat_name }}</h5>
-                            <p class="card-text text-muted" id = "last_message_{{chat.chat.id}}" value="{{ chat.last_message }}"></p>
+                            <p class="card-text text-muted" id = "last_message_{{chat.chat.id}}" 
+                            value="{% if chat.last_message_content %}{{chat.last_message_content}}{% else %}{{chat.last_message_file}}{% endif %}"></p>
                         </div>
                     </div>
                 </a>
@@ -30,6 +31,12 @@
 </div>
 
 <script> 
+function extractLinks(value) {
+    const sanitizedValue = value.replace(/<br>/gi, '');
+    const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/gi;
+    return sanitizedValue.match(urlRegex) || [];
+}
+
 function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -61,25 +68,68 @@ const lastMessages = document.querySelectorAll('[id^="last_message_"]');
 
 lastMessages.forEach((messageElement) => {
     const messageText = messageElement.getAttribute('value'); 
-    const truncatedText = truncateText(messageText, 25); 
 
-    messageElement.innerHTML = truncatedText; 
+    if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(messageText)) {
+        messageElement.innerHTML = `<b>photo</b>`
+    } else {
+        const truncatedText = truncateText(messageText, 25); 
+        messageElement.innerHTML = truncatedText; 
+    }
 });
-
 
 function previewImage(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('image-preview');
     const previewImg = document.getElementById('preview-img');
-        
+
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            previewImg.src = e.target.result;  // Загружаем изображение для предварительного просмотра
-            preview.style.display = 'block';  // Показываем блок с изображением
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
         };
-        reader.readAsDataURL(file);  // Читаем изображение как data URL
+        reader.readAsDataURL(file);
+
+        // Отправка изображения на сервер
+        const formData = new FormData();
+        formData.append("image", file); // Добавляем файл в форму данных
+
+        // Выполняем запрос с файлом
+        fetch('/upload_image/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.imageUrl) {
+                previewImg.src = data.imageUrl;
+            } else {
+                console.error("Image upload failed");
+            }
+        })
+        .catch(error => {
+            console.error("Error uploading image:", error);
+        });
     }
+}
+
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 function removeImage() {
@@ -87,10 +137,36 @@ function removeImage() {
     const fileInput = document.getElementById('file-upload');
     const previewImg = document.getElementById('preview-img');
 
+    // Извлекаем путь без /media/
+    const relativePath = previewImg.src.split('/media/')[1];
+
+    function deleteImage(ImagePath) {
+        fetch(`/delete_image/${ImagePath}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')  
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'File deleted') {
+                console.log('Image deleted');
+                // Обновление интерфейса или удаление картинки из DOM
+            } else {
+                console.error('Error deleting file:', data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    deleteImage(relativePath)
+
     preview.style.display = 'none';  // Скрываем блок с изображением
     fileInput.value = '';  // Очищаем значение input
     previewImg.src = '';  // Очищаем превью изображения
 }
+
+
 
 function replyToMessage(messageId) {
     const messageElement = document.getElementById(messageId);
@@ -116,8 +192,6 @@ function findMessageThatWasReplied(id=null) {
     } else {
         messageElement = document.getElementById(`message-${id}`);
     }
-
-    console.log(messageElement)
 
     if (messageElement) {
         messageElement.scrollIntoView({ behavior: 'smooth' });
@@ -230,15 +304,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let messageElement;
 
+
             let formattedContent = '';
-            const maxLength = 25;
-            for (let i = 0; i < data.content.length; i += maxLength) {
-                formattedContent += data.content.slice(i, i + maxLength) + '<br>';
+
+            if (data.content) {
+                const maxLength = 25;
+                for (let i = 0; i < data.content.length; i += maxLength) {
+                    formattedContent += data.content.slice(i, i + maxLength) + '<br>';
+                }
+
+                const links = extractLinks(formattedContent);
+                formattedContent = links.length > 0 
+                    ? `<a href="${links[0]}">${formattedContent}</a>` 
+                    : formattedContent;
             }
 
             const date = data.sent_at
             const formattedDate = formatDate(date);
-            
 
             let truncatedText;
 
@@ -255,8 +337,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="bi bi-arrow-return-right" onclick="replyToMessage('message-${data.id}')" aria-hidden="true"></i>
                         ${data.liked ? `<i class="bi bi-heart-fill mt-auto" style="color:red" onclick="liked(${data.id})" id="icon_like_${data.id}"></i>` 
                         : `<i class="bi bi-heart mt-auto" style="color:red" onclick="liked(${data.id})" id="icon_like_${data.id}"></i>`}
-
+                        ${ data.image ? `<div class="mb-2">
+                            <img src="${data.image}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                        </div>` : ''}
                         <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                            ${ data.file_content ? `<div class="mb-2">
+                                <img src="${data.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                            </div>` : ''}
                             <p class="mb-0" id='message-${data.id}'>${formattedContent}</p>
                             <div class="d-flex align-items-center justify-content-end mb-2">
                                 <small class="text-muted">${formattedDate}</small>
@@ -271,9 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="d-flex align-items-start">
                         <img src="${data.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                         <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                            ${ data.file_content ? `<div class="mb-2">
+                                <img src="${data.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                            </div>` : ''}
                             <p class="mb-1 fw-bold">${data.sender_name}</p>
                             <p class="mb-0" id='message-${data.id}'>${formattedContent}</p>
-
                             <div class="d-flex align-items-center justify-content-end mb-2">
                                 <small class="text-muted">${formattedDate}</small>
                                 ${data.read ? `<i class="bi bi-all ms-2" id="read_${data.id}"></i>` : `<i class="bi bi-check ms-2" id="read_${data.id}"></i>`}
@@ -321,13 +410,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     data.messages.forEach(msg => {
                         const isOwnMessage = msg.sender_id === Number(user);
                         let messageElement;
-
+                        
                         let formattedContent = '';
-                        const maxLength = 25; 
-                        for (let i = 0; i < msg.content.length; i += maxLength) {
-                            formattedContent += msg.content.slice(i, i + maxLength) + '<br>';
-                        }
+                        if (msg.content) {
+                            const maxLength = 25; 
+                            for (let i = 0; i < msg.content.length; i += maxLength) {
+                                formattedContent += msg.content.slice(i, i + maxLength) + '<br>';
+                            }
 
+                            const links = extractLinks(formattedContent);
+                            formattedContent = links.length > 0 
+                                ? `<a href="${links[0]}">${formattedContent}</a>` 
+                                : formattedContent;
+                        }
+                        
+                
                         const date = msg.sent_at
                         const formattedDate = formatDate(date);
 
@@ -336,6 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (msg.replied_to_content) { 
                             truncatedText = truncateText(msg.replied_to_content, 15);
                         }
+
+                        console.log(formattedContent)
+                        console.log('image', msg.file_content)
 
                         if (isOwnMessage) {
                             messageElement = `
@@ -347,8 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ${msg.liked ? `<i class="bi bi-heart-fill mt-auto" style="color:red" onclick="liked(${msg.id})" id="icon_like_${msg.id}"></i>` 
                                     : `<i class="bi bi-heart mt-auto" style="color:red" onclick="liked(${msg.id})" id="icon_like_${msg.id}"></i>`}
                                     <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                                        ${ msg.file_content ? `<div class="mb-2">
+                                            <img src="${msg.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                                        </div>` : ''}
                                         <p class="mb-0" id="message-${msg.id}">${formattedContent}</p>
-                                        
                                         <div class="d-flex align-items-center justify-content-end mb-2">
                                             <small class="text-muted">${formattedDate}</small>
                                             ${msg.read ? `<i class="bi bi-all ms-2" id="read_${msg.id}"></i>` : `<i class="bi bi-check ms-2" id="read_${msg.id}"></i>`}
@@ -362,6 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="d-flex align-items-start mb-2">
                                     <img src="${msg.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
                                     <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                                        ${ msg.file_content ? `<div class="mb-2">
+                                            <img src="${msg.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                                        </div>` : ''}
                                         <p class="mb-1 fw-bold">${msg.sender_name}</p>
                                         <p class="mb-0" id="message-${msg.id}">${formattedContent}</p>
 
@@ -416,13 +521,17 @@ document.addEventListener('DOMContentLoaded', () => {
         function sendMessage(input, messageId) {
             const message = input.value.trim();
             var messageId = document.querySelector('#reply-message a').getAttribute('data-message-id');
+            const file_content = document.getElementById('preview-img').getAttribute('src')
+
             if (messageId) {
                 messageId = messageId.replace(/\D/g, '')
             }
-            if (message && socket) {
+
+            if (socket && (message || file_content)) {
                 socket.send(JSON.stringify({
                     message: message,
                     replied_to_id: messageId,
+                    file_content:file_content,
                 }));
                 input.value = ''; 
             }

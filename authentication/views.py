@@ -21,10 +21,10 @@ def custom_login_view(request):
     return render(request, "registration/login.html")
 
 
-def count_unread_notifications(user):
-    user = CustomUser.objects.get(id=user.id)
-    unread = user.unread_notifications_count()
-    return unread
+# def count_unread_notifications(user):
+#     user = CustomUser.objects.get(id=user.id)
+#     unread = user.unread_notifications_count()
+#     return unread
 
 def main(request):
     if not request.user.is_authenticated:

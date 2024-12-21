@@ -9,7 +9,6 @@ from django.http import JsonResponse
 from django.utils.timezone import now
 from datetime import timedelta
 from channels.layers import get_channel_layer
-from authentication.views import count_unread_notifications  
 from asgiref.sync import async_to_sync
 import os, json
 
@@ -170,14 +169,14 @@ def be_friends(request, to_whom, from_whom):
             f"user_{from_whom.id}",  # Группа по id получателя
             {
                 "type": "send_notification",  # тип события в consumers
-                'unread_count':count_unread_notifications(from_whom),
+                'unread_count':from_whom.unread_notifications_count(),
             }
         )
         async_to_sync(layer.group_send)(
             f"user_{to_whom.id}",  # Группа по id получателя
             {
                 "type": "send_notification",  # тип события в consumers
-                'unread_count':count_unread_notifications(to_whom),
+                'unread_count':to_whom.unread_notifications_count(),
             }
         )
         return JsonResponse({'status': 'ok', 'friend_status': status})
@@ -257,7 +256,7 @@ def toggle_follow_user(request, user_id):
                 f"user_{user_to_toggle.id}",  # Группа по id получателя
                 {
                     "type": "send_notification",  # тип события в consumers
-                    'unread_count':count_unread_notifications(user_to_toggle),
+                    'unread_count':user_to_toggle.unread_notifications_count(),
                 }
             )
 
@@ -265,7 +264,7 @@ def toggle_follow_user(request, user_id):
                 f"user_{current_user.id}",  # Группа по id получателя
                 {
                     "type": "send_notification",  # тип события в consumers
-                    'unread_count':count_unread_notifications(current_user),
+                    'unread_count':current_user.unread_notifications_count(),
                 }
             )
 

@@ -28,57 +28,55 @@
             </div>
         </div>
     </div>
-    {% if notifications.exists %}
-        <ul class="list-unstyled" id="notification-list">
-            {% for n in notifications.all %}
-                <li class="notification-item mb-3 p-3 border-bottom">
-                    <div class="notification-details">
-                        <h3 class="h5 mb-2">{{ n.name }}</h3>
-                        <p>{{ n.description }}</p>    
-                        <small>{{ n.created_at }}</small>
-                        <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ n.id }}">
-                            <i class="bi bi-trash"></i>
-                        </button>
+    <ul class="list-unstyled" id="notification-list">
+        {% for n in notifications.all %}
+            <li class="notification-item mb-3 p-3 border-bottom">
+                <div class="notification-details">
+                    <h3 class="h5 mb-2">{{ n.name }}</h3>
+                    <p>{{ n.description }}</p>    
+                    <small>{{ n.created_at }}</small>
+                    <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ n.id }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
 
-                         <!-- Модальное окно удаления -->
-                         <div class="modal fade" id="confirmDeleteModal{{ n.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ n.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="confirmDeleteLabel{{ n.id }}">Confirm deletion</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to delete this notification? You can't undo it.
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <form action="{% url 'delete_notification' n.id %}" method="POST">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </div>
+                     <!-- Модальное окно удаления -->
+                     <div class="modal fade" id="confirmDeleteModal{{ n.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ n.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirmDeleteLabel{{ n.id }}">Confirm deletion</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete this notification? You can't undo it.
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form action="{% url 'delete_notification' n.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
-
-                        {% if n.sender != n.receiver and 'stopped' not in n.description and 'accepted' not in n.description and n.name == 'Friends' and n.answer is None %}
-                            <form action="{% url 'accept_friend_request' n.id %}" method="POST" class="accept-form">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-success">Accept</button>
-                            </form>
-                            <form action="{% url 'reject_friend_request' n.id %}" method="POST" class="reject-form">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                            </form>
-                        {% endif %}
                     </div>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No notifications found.</p>
-    {% endif %}
+
+                    {% if n.sender != n.receiver and 'stopped' not in n.description and 'accepted' not in n.description and n.name == 'Friends' and n.answer is None %}
+                        <form action="{% url 'accept_friend_request' n.id %}" method="POST" class="accept-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                        </form>
+                        <form action="{% url 'reject_friend_request' n.id %}" method="POST" class="reject-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </li>
+        {% empty %}
+            <p>No notifications found.</p>
+        {% endfor %}
+    </ul>
 </div>
 <script>
     document.querySelectorAll('.accept-form, .reject-form').forEach(form => {

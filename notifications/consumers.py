@@ -2,7 +2,6 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 from asgiref.sync import sync_to_async
-from authentication.views import count_unread_notifications  
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -31,7 +30,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def get_unread_notifications_count(self):
-        return count_unread_notifications(self.scope['user'])
+        return self.scope['user'].unread_notifications_count()
 
     async def receive(self, text_data):
         data = json.loads(text_data)

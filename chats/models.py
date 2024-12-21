@@ -4,7 +4,7 @@ from django.conf import settings
 class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name = 'sender_of_message')
     content = models.TextField(blank=True, null=True)
-    file_content = models.FileField(upload_to='static/messages_files/', blank=True, null=True)
+    file_content = models.FileField(upload_to='media/messages_files/', blank=True, null=True)
     read = models.BooleanField(default=False)
     sent_at = models.DateTimeField(auto_now_add=True)
     replied_to = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE, related_name='replies')
