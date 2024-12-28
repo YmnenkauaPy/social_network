@@ -1,12 +1,13 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async
 import json
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.group_name = f'chat_{self.chat_id}'
- 
+
         await self.channel_layer.group_add(
             self.group_name,
             self.channel_name
@@ -29,53 +30,96 @@ class ChatConsumer(AsyncWebsocketConsumer):
             try:
                 replied_to = models.Message.objects.get(id=replied_to_id)
             except models.Message.DoesNotExist:
-                pass 
+                pass
 
         message = models.Message.objects.create(
             sender=user,
             content=message_content,
             replied_to=replied_to,
-            liked=False,
             file_content=file_content,
         )
         chat.messages.add(message)
         chat.save()
         return message
 
-
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message_content = text_data_json['message']
-        replied_to_id = text_data_json.get('replied_to_id')
-        file_content = text_data_json.get('file_content')
-        user = self.scope['user'] 
+        event = text_data_json.get('event')
+        user = self.scope['user']
 
+        if event == 'mark_as_read':
+            id = text_data_json.get('id')
+            await self.mark_as_read(id)
+
+        elif event == 'make_last_message':
+            chat_id = text_data_json.get('chat_id')
+            msg_id = text_data_json.get('msg_id')
+            await self.make_last_message(msg_id, chat_id)
+
+        elif event == 'send_message':
+            message_content = text_data_json['message']
+            replied_to_id = text_data_json.get('replied_to_id')
+            file_content = text_data_json.get('file_content')
+            try:
+                message = await self.create_message(user, self.chat_id, message_content, file_content, replied_to_id)
+
+                user_liked = await sync_to_async(lambda: user in message.liked.all())()
+                liked = await sync_to_async(lambda: message.liked.count())()
+
+                await self.channel_layer.group_send(
+                    self.group_name,
+                    {
+                        'type': 'send_message',
+                        'id': message.id,
+                        'message': message.content if message.content else '',
+                        'replied_to_id': message.replied_to_id,
+                        'replied_to_content': message.replied_to.content if message.replied_to else None,
+                        'sent_at': message.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'sender_id': user.id,
+                        'sender_name': user.username,
+                        'sender_profile_pic': user.profile_picture.url,
+                        'liked': int(liked),
+                        'user_liked':user_liked,
+                        'read':message.read,
+                        'file_content': str(message.file_content) if message.file_content else None,
+                    }
+                )
+            except Exception as e:
+                print("Error creating message:", e)
+
+    async def make_last_message(self, msg_id, chat_id):
+        from .models import Chat, Message
         try:
-            message = await self.create_message(user, self.chat_id, message_content, file_content, replied_to_id)
+            message = await database_sync_to_async(Message.objects.get)(id=msg_id)
+            chat = await database_sync_to_async(Chat.objects.get)(id=chat_id)
+            chat.last_message = message
+
+            await database_sync_to_async(chat.save)()
 
             await self.channel_layer.group_send(
                 self.group_name,
                 {
-                    'type': 'chat_message',
-                    'id': message.id,
-                    'message': message.content if message.content else '',
-                    'replied_to_id': message.replied_to_id,
-                    'replied_to_content': message.replied_to.content if message.replied_to else None,
-                    'sent_at': message.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'sender_id': user.id,
-                    'sender_name': user.username,
-                    'sender_profile_pic': user.profile_picture.url,
-                    'liked':message.liked,
-                    'read':message.read,
-                    'file_content': str(message.file_content) if message.file_content else None,
+                    'type': 'last_message',
+                    'chat_id': chat_id,
+                    'msg_id':msg_id,
+                    'msg_content':message.content,
                 }
             )
-        except Exception as e:
-            print("Error creating message:", e)
 
-    
-    async def chat_message(self, event):
+        except Exception as e:
+            print('Error in saving last message:', e)
+
+    async def last_message(self, event):
         await self.send(text_data=json.dumps({
+            'event': 'last_message',
+            'msg_id': event['msg_id'],
+            'chat_id': event['chat_id'],
+            'msg_content':event['msg_content'],
+        }))
+
+    async def send_message(self, event):
+        await self.send(text_data=json.dumps({
+            'event':'send_message',
             'id': event['id'],
             'content': event['message'] if event['message'] else '',
             'sent_at': event['sent_at'],
@@ -85,6 +129,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'replied_to_id': event['replied_to_id'] if event['replied_to_id'] else None,
             'replied_to_content': event['replied_to_content'] if  event['replied_to_content'] else None,
             'liked': event['liked'],
+            'user_liked': event['user_liked'],
             'read':event['read'],
-            'file_content':event['file_content'] if event['file_content'] else None,
+            'file_content':event['file_content'],
+        }))
+
+    async def mark_as_read(self, id):
+        from .models import Message
+        try:
+            message = await database_sync_to_async(Message.objects.get)(id=id)
+            message.read = True
+            await database_sync_to_async(message.save)()
+
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    'type': 'message_read',
+                    'id': id,
+                }
+            )
+        except Exception as e:
+            print("Error marking message as read:", e)
+
+    async def message_read(self, event):
+        await self.send(text_data=json.dumps({
+            'event': 'message_read',
+            'read': True,
+            'id': event['id'],
         }))

@@ -8,29 +8,34 @@ class Message(models.Model):
     read = models.BooleanField(default=False)
     sent_at = models.DateTimeField(auto_now_add=True)
     replied_to = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE, related_name='replies')
-    liked = models.BooleanField(default=False)
+    liked = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, null=True, related_name = 'liked_message')
 
 class Chat(models.Model):
     people = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name = 'people_in_chat')
     messages = models.ManyToManyField(Message, related_name='messages_of_chat', blank=True, null=True)
+    last_message = models.OneToOneField(Message, on_delete=models.CASCADE, blank=True, null=True, related_name='last_message_of_chat')
 
     def get_user_chat_name(self, user):
         chat_name = self.chatnames.filter(user=user).first()
         return chat_name.name
 
     def get_another_person(self, user):
-        people = self.people.all() 
+        people = self.people.all()
         another_person = people.exclude(id=user.id)
 
         if another_person.exists():
-            return another_person.first() 
+            return another_person.first()
 
-        return None  
+        return None
+
+    def get_unread_messages(self, user):
+        messages = self.messages.all().filter(read=False).exclude(sender=user).count()
+        return messages
 
 class ChatName(models.Model):
     chat = models.ForeignKey(Chat, related_name='chatnames', on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='chatnames', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255) 
+    name = models.CharField(max_length=255)
 
     class Meta:
         unique_together = ('chat', 'user')

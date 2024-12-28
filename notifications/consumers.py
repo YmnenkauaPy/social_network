@@ -9,11 +9,11 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             await self.close()
         else:
             self.group_name = f"user_{self.scope['user'].id}"
-   
+
             await self.channel_layer.group_add(
                 self.group_name,
                 self.channel_name
-            )  
+            )
 
             await self.accept()
 
@@ -41,5 +41,5 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'send_notification',
                     'unread_count':unread_count,
-                },   
+                },
             )

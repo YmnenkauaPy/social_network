@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from posts.models import Post
-from django.apps import apps  
+from django.apps import apps
 
 class CustomUser(AbstractUser):
     details = models.CharField(max_length=100, default='')
@@ -14,10 +14,8 @@ class CustomUser(AbstractUser):
     last_activity = models.DateTimeField(null=True, blank=True)
 
     def unread_notifications_count(self):
-        Notification = apps.get_model('notifications', 'Notification') 
+        Notification = apps.get_model('notifications', 'Notification')
         return Notification.objects.filter(
             receiver=self,
             read=False
         ).count()
-    
-    #обкладинка

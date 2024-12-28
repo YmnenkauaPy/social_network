@@ -23,7 +23,7 @@
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
+
     </style>
     {% load static %}
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
@@ -36,6 +36,8 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'assets/demo/chart-area-demo.js' %}"></script>
     <script src="{% static 'assets/demo/chart-bar-demo.js' %}"></script>
+
+
     <style>
         body {
             transition: background-color 0.3s, color 0.3s;
@@ -43,17 +45,17 @@
     </style>
     <script>
         function submitPostForm(event) {
-            event.preventDefault(); 
+            event.preventDefault();
             document.getElementById('notificationsForm').submit();
         }
 
         function submitLogout(event) {
-            event.preventDefault(); 
+            event.preventDefault();
             document.getElementById('logoutForm').submit();
         }
 
         function submitCreatePost(event) {
-            event.preventDefault(); 
+            event.preventDefault();
             document.getElementById('CreatePostForm').submit();
         }
     </script>
@@ -81,7 +83,7 @@
                         <img src="{{ user.profile_picture.url }}" class="profile-img">
                     {% else %}
                         <img src="{% static 'images/None.png' %}" class="profile-img">
-                    {% endif %}  
+                    {% endif %}
                     <span class="badge badge-danger" id="unread-count">{% if unread > 0 %} {{ unread }} {% endif %}</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -134,6 +136,7 @@
                         <a class="nav-link" href="{% url 'chats' %}">
                             <div class="sb-nav-link-icon"><i class="bi bi-chat-text"></i></div>
                             Chats
+                            <span class="badge badge-danger" id="unread-count-msg">{% if unread_msg > 0 %} {{ unread_msg }} {% endif %}</span>
                         </a>
                         <a class="nav-link" id="theme-toggle-btn">
                             <div class="sb-nav-link-icon">
@@ -150,10 +153,10 @@
             </nav>
         </div>
     </div>
-    
+
     {% block content %}
     {% endblock %}
-    
+
 <script>
     const userId = document.getElementById('user').value;  // ID пользователя из шаблона
     const NotificationsSocket = new WebSocket(
@@ -171,10 +174,10 @@
 
     NotificationsSocket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-
+        console.log(data)
         const unreadCountElement = document.getElementById('unread-count');
         const unreadCountElement2 = document.getElementById('unread-count2');
-        
+
         if (data.unread > 0) {
             // Обновляем текст уведомлений
             const notificationList = document.getElementById('notification-list');
@@ -185,7 +188,7 @@
                 newNotification.innerHTML = `
                     <div class="notification-details">
                         <h3 class="h5 mb-2">${data.name}</h3>
-                        <p>${data.description}</p>    
+                        <p>${data.description}</p>
                         <small>${data.created_at}</small>
                         <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal${data.id}">
                             <i class="bi bi-trash"></i>
@@ -236,13 +239,11 @@
         }
     };
 
-
-
     function toggleTheme() {
         const body = document.body;
         const icon = document.getElementById('theme-icon');
         const currentTheme = body.classList.contains('bg-dark') ? 'dark' : 'light';
-            
+
         if (currentTheme === 'dark') {
             // Переключаем на светлую тему
             body.classList.remove('bg-dark', 'text-light');
@@ -260,6 +261,6 @@
 
     document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
 </script>
-    
+
 </body>
 </html>

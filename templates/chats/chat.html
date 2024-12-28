@@ -12,35 +12,35 @@
 
         </div>
     </div>
-    
+
 
     <div id="reply-message" style="display: none; background-color: #f1f1f1; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: 'Courier New', Courier, monospace; position: relative;">
         <a href="javascript:void(0)" onclick="findMessageThatWasReplied()">
             <strong>Replying to:</strong> <span id="reply-content"></span>
         </a>
-        <span class="close-reply" onclick="cancelReply()" style="position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>  
+        <span class="close-reply" onclick="cancelReply()" style="position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>
     </div>
-    
+
     <label for="file-upload" class="btn btn-secondary me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         <i class="bi bi-camera" aria-hidden="true"></i>
     </label>
-    
+
     <!-- Скрытый input для загрузки файла -->
     <input type="file" id="file-upload" accept="image/*" style="display: none;" onchange="previewImage(event)">
 
     <!-- Предпросмотр изображения -->
     <div id="image-preview" class="mb-2" style="max-width: 100%; height: auto; display: none; position: relative;">
         <img id="preview-img" src="" alt="Image Preview" style="max-width: 200px; max-height: 100px; object-fit: cover;">
-        
+
         <!-- Кнопка для удаления изображения -->
         <span id="remove-image" onclick="removeImage()" style="position: absolute; top: 5px; right: 5px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>
     </div>
-    
+
     <form method="POST" class="d-flex align-items-center p-2 border-top" style="position: sticky; bottom: 0; background-color: #fff;" id="message-form">
         {% csrf_token %}
         <!-- Поле ввода сообщения -->
-        <textarea id="chat-message-input" name="content" class="form-control me-2" 
-        rows="1" placeholder="Type a message..." style="resize: none; height: 20px;" 
+        <textarea id="chat-message-input" name="content" class="form-control me-2"
+        rows="1" placeholder="Type a message..." style="resize: none; height: 20px;"
         oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 100) + 'px';"></textarea>
         <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
             <i class="bi bi-send"></i>
