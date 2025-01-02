@@ -16,11 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function markMessageAsRead(messageId) {
+    function markMessageAsRead(messageId, chatId) {
         if (socket) {
             socket.send(JSON.stringify({
                 'event': 'mark_as_read',
                 'id': messageId,
+                'chat_id':chatId,
             }));
         }
     }
@@ -114,9 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     : `<i class="bi bi-heart fs-5" style="color:red" id="icon_like_${data.id}" onclick="liked(${data.id})"></i>`}
                                 <span id = "likes_count_${data.id}" class="position-absolute top-50 start-50 translate-middle text-black fw-bold" onclick="liked(${data.id})">${data.liked > 0 ? data.liked : ''}</span>
                             </div>
-                            <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                            <div style="background-color: rgb(240, 240, 240)" class="text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                                 ${ data.file_content ? `<div class="mb-2">
-                                    <img src="${data.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                                    <img src="${data.file_content}" alt="Message Image" class="img-fluid" style="max-width: 500px; max-height: 500px; object-fit: contain;">
                                 </div>` : ''}
                                 <p class="mb-0" id='message-${data.id}'>${formattedContent}</p>
                                 <div class="d-flex align-items-center justify-content-end mb-2">
@@ -131,10 +132,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     messageElement = `
                         <div class="d-flex align-items-start">
                             <img src="${data.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                            <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                            <div style="background-color: rgb(220, 220, 220)" class="text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                                 <p class="mb-1 fw-bold">${data.sender_name}</p>
                                 ${data.file_content ? `<div class="mb-2">
-                                    <img src="${data.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                                    <img src="${data.file_content}" alt="Message Image" class="img-fluid" style="max-width: 500px; max-height: 500px; object-fit: contain;">
                                 </div>` : ''}
                                 <p class="mb-0" id='message-${data.id}'>${formattedContent}</p>
                                 <div class="d-flex align-items-center justify-content-end mb-2">
@@ -157,13 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 chatLog.innerHTML += messageElement;
 
+                const chat_id = document.getElementById('chatId').getAttribute('name')
+
                 if (!isOwnMessage) {
                     const newMessage = document.getElementById(`message-${data.id}`);
                     const observer = new IntersectionObserver((entries, observer) => {
                         entries.forEach(entry => {
                             if (entry.isIntersecting) {
                                 const messageId = entry.target.id.split('-')[1];
-                                markMessageAsRead(messageId);
+                                markMessageAsRead(messageId, chat_id);
                                 observer.unobserve(entry.target);
                             }
                         });
@@ -173,12 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const chatScroll = document.getElementById('chat-scroll');
                 chatScroll.scrollTop = chatScroll.scrollHeight;
-
-                const chat_id = document.getElementById('chatId').getAttribute('name')
-
                 makeLastMessage(data.id, chat_id)
-                
+
                 document.getElementById('reply-message').style.display = 'none';
+                removeImage('close')
 
             } else if (data['event'] === 'message_read' && exists) {
                 const messageId = data.id;
@@ -191,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (data['event'] === 'last_message') {
                 const lastMessage = document.getElementById(`last_message_${data.chat_id}`)
                 truncatedText = truncateText(data.msg_content, 25);
-                lastMessage.innerText = truncatedText;
+                lastMessage.innerHTML = truncatedText;
                 lastMessage.value = truncatedText;
             }
         }
@@ -235,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (isOwnMessage) {
                             messageElement = `
                                 <div class="d-flex align-items-start justify-content-end mb-2">
-                                    ${truncatedText ? `<a href="javascript:void(0)" onclick="findMessageThatWasReplied(${msg.replied_to_id})"><div class="bg-light text-muted p-1 rounded">
+                                    ${truncatedText ? `<a href="javascript:void(0)" onclick="findMessageThatWasReplied(${msg.replied_to_id})"><div class="text-muted p-1 rounded">
                                         <small>Replied to: ${truncatedText}</small>
                                     </div></a>` : ''}
                                     <i class="bi bi-arrow-return-right" data-message-id="${msg.id}" onclick="replyToMessage('message-${msg.id}')" aria-hidden="true"></i>
@@ -246,9 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <span id = "likes_count_${msg.id}" class="position-absolute top-50 start-50 translate-middle text-black fw-bold" onclick="liked(${msg.id})">${msg.liked > 0 ? msg.liked : ''}</span>
                                     </div>
 
-                                    <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                                    <div style="background-color: rgb(240, 240, 240)" class="text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                                         ${msg.file_content ? `<div class="mb-2">
-                                            <img src="${msg.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                                            <img src="${msg.file_content}" alt="Message Image" class="img-fluid" style="max-width: 500px; max-height: 500px; object-fit: contain;">
                                         </div>` : ''}
                                         <p class="mb-0" id="message-${msg.id}">${formattedContent}</p>
                                         <div class="d-flex align-items-center justify-content-end mb-2">
@@ -263,10 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             messageElement = `
                                 <div class="d-flex align-items-start mb-2">
                                     <img src="${msg.sender_profile_pic}" alt="User Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                    <div class="bg-light text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
+                                    <div style="background-color: rgb(220, 220, 220)" class="text-dark p-2 rounded-3 shadow-sm" style="max-width: 75%;">
                                         <p class="mb-1 fw-bold">${msg.sender_name}</p>
                                         ${msg.file_content ? `<div class="mb-2">
-                                            <img src="${msg.file_content}" alt="Message Image" class="img-fluid" style="max-width: 100%; max-height: 500px; object-fit: contain;">
+                                            <img src="${msg.file_content}" alt="Message Image" class="img-fluid" style="max-width: 500px; max-height: 500px; object-fit: contain;">
                                         </div>` : ''}
                                         <p class="mb-0" id="message-${msg.id}">${formattedContent}</p>
                                         <div class="d-flex align-items-center justify-content-end mb-2">
@@ -296,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 entries.forEach(entry => {
                                     if (entry.isIntersecting) {
                                         const messageId = entry.target.id.split('-')[1];
-                                        markMessageAsRead(messageId);
+                                        markMessageAsRead(messageId, chatId);
                                         observer.unobserve(entry.target);
                                     }
                                 });
@@ -312,27 +313,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Error loading messages:', error));
     }
 
-
     function initializeMessageForm() {
         const form = document.getElementById('message-form');
         const input = document.querySelector('#chat-message-input');
-        const chatId = document.getElementById('chat_id').getAttribute('name');
+        const chat_id = document.getElementById('chatId').getAttribute('name')
 
         if (form) {
             form.addEventListener('submit', function(event) {
                 event.preventDefault();
-                sendMessage(input);
+                sendMessage(input, chat_id);
             });
 
             input.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
                     event.preventDefault();
-                    sendMessage(input);
+                    sendMessage(input, chat_id);
                 }
             });
         }
 
-        function sendMessage(input, messageId) {
+        function sendMessage(input, chatId) {
             const message = input.value.trim();
             var messageId = document.querySelector('#reply-message a').getAttribute('data-message-id');
             const file_content = document.getElementById('preview-img').getAttribute('src')
@@ -347,6 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     message: message,
                     replied_to_id: messageId,
                     file_content:file_content,
+                    chat_id:chatId,
                 }));
                 input.value = '';
             }

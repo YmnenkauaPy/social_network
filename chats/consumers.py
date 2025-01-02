@@ -1,6 +1,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
+from .models import Chat
+from chats.utils import notify_users_about_unread
 import json
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -45,6 +47,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         event = text_data_json.get('event')
+        chat_id = text_data_json.get('chat_id')
+        chat = await database_sync_to_async(Chat.objects.get)(id=int(chat_id))
         user = self.scope['user']
 
         if event == 'mark_as_read':
@@ -52,7 +56,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.mark_as_read(id)
 
         elif event == 'make_last_message':
-            chat_id = text_data_json.get('chat_id')
             msg_id = text_data_json.get('msg_id')
             await self.make_last_message(msg_id, chat_id)
 
@@ -87,12 +90,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             except Exception as e:
                 print("Error creating message:", e)
 
+        await notify_users_about_unread(chat)
+
     async def make_last_message(self, msg_id, chat_id):
         from .models import Chat, Message
         try:
             message = await database_sync_to_async(Message.objects.get)(id=msg_id)
             chat = await database_sync_to_async(Chat.objects.get)(id=chat_id)
             chat.last_message = message
+            content = '<b>photo</b>'
+            if message.content:
+                content = message.content
 
             await database_sync_to_async(chat.save)()
 
@@ -102,7 +110,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type': 'last_message',
                     'chat_id': chat_id,
                     'msg_id':msg_id,
-                    'msg_content':message.content,
+                    'msg_content':content,
                 }
             )
 
@@ -157,3 +165,42 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'read': True,
             'id': event['id'],
         }))
+
+class ChatListConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        if self.scope["user"].is_authenticated:
+            self.user = self.scope["user"]
+            self.group_name = f"user_{self.user.id}"
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+            await self.accept()
+        else:
+            await self.close()
+
+    async def disconnect(self, close_code):
+        if self.scope["user"].is_authenticated:
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        if data.get("type") == "request_unread_counts":
+            await self.send_unread_counts()
+
+    async def send_unread_counts(self, chat_id=None):
+        if chat_id:
+            chat = await database_sync_to_async(Chat.objects.get)(id=chat_id)
+            unread_counts = [{'chat_id': chat.id,'unread_count': await chat.unread_count(self.user)}]
+        else:
+            chats = await sync_to_async(list)(Chat.objects.filter(people=self.user))
+
+            unread_counts = [
+                {"chat_id": chat.id, "unread_count": await chat.unread_count(self.user)}
+                for chat in chats
+            ]
+
+        await self.send(text_data=json.dumps({
+            "type": "unread_counts",
+            "data": unread_counts,
+        }))
+
+    async def update_unread_counts(self, event):
+        await self.send_unread_counts(event['chat_id'])

@@ -34,13 +34,16 @@ function truncateText(text, maxLength) {
 const lastMessages = document.querySelectorAll('[id^="last_message_"]');
 
 lastMessages.forEach((messageElement) => {
-    const messageText = messageElement.getAttribute('value');
+    const content = messageElement.getAttribute('content-value');
+    const file = messageElement.getAttribute('file-content-value');
 
-    if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(messageText)) {
+    if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)) {
         messageElement.innerHTML = `<b>photo</b>`
-    } else {
-        const truncatedText = truncateText(messageText, 25);
+    } else if (content) {
+        const truncatedText = truncateText(content, 25);
         messageElement.innerHTML = truncatedText;
+    } else if (!content && !file) {
+        messageElement.innerHTML = '<b>No messages</b>';
     }
 });
 
@@ -57,11 +60,9 @@ function previewImage(event) {
         };
         reader.readAsDataURL(file);
 
-        // Отправка изображения на сервер
         const formData = new FormData();
-        formData.append("image", file); // Добавляем файл в форму данных
+        formData.append("image", file);
 
-        // Выполняем запрос с файлом
         fetch('/upload_image/', {
             method: 'POST',
             body: formData,
@@ -72,6 +73,7 @@ function previewImage(event) {
         .then(response => response.json())
         .then(data => {
             if (data.imageUrl) {
+                // Используйте imageUrl без изменений
                 previewImg.src = data.imageUrl;
             } else {
                 console.error("Image upload failed");
@@ -99,7 +101,8 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function removeImage() {
+function removeImage(event) {
+    console.log(event)
     const preview = document.getElementById('image-preview');
     const fileInput = document.getElementById('file-upload');
     const previewImg = document.getElementById('preview-img');
@@ -107,32 +110,32 @@ function removeImage() {
     // Извлекаем путь без /media/
     const relativePath = previewImg.src.split('/media/')[1];
 
-    function deleteImage(ImagePath) {
-        fetch(`/delete_image/${ImagePath}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'File deleted') {
-                console.log('Image deleted');
-                // Обновление интерфейса или удаление картинки из DOM
-            } else {
-                console.error('Error deleting file:', data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
+    if (event == 'delete') {
+        function deleteImage(ImagePath) {
+            fetch(`/delete_image/${ImagePath}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'File deleted') {
+                    console.log('Image deleted');
+                } else {
+                    console.error('Error deleting file:', data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        deleteImage(relativePath)
     }
 
-    deleteImage(relativePath)
-
-    preview.style.display = 'none';  // Скрываем блок с изображением
-    fileInput.value = '';  // Очищаем значение input
-    previewImg.src = '';  // Очищаем превью изображения
+    preview.style.display = 'none';
+    fileInput.value = '';
+    previewImg.src = '';
 }
-
 
 function replyToMessage(messageId) {
     const messageElement = document.getElementById(messageId);

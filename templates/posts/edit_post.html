@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
+{% load custom_tags %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <h2 class="text-center mb-4">Edit Post</h2>
             <form action="" method="post" enctype="multipart/form-data" class="p-4 border rounded shadow-sm bg-light">
                 {% csrf_token %}
-                
+
                 <div class="mb-3">
                     <label for="id_name" class="form-label">Name:</label>
                     <textarea class="form-control" id="id_name" name="name" required>{{ post.name }}</textarea>
@@ -27,7 +27,16 @@
                 <div id="fileUploadSection" style="display: block;" class="mb-3">
                     {% if post.content %}
                         <label for="id_content" class="form-label">Current File:</label>
-                        <img src="{{ post.content.url }}" alt="current media" class="d-block mb-2" style="max-width: 100px;">
+                        {% if post.content|endswith:".jpg,.jpeg,.png,.gif" %}
+                            <img src="{{ post.content.url }}" alt="current media" class="d-block mb-2" style="max-width: 100px;">
+                        {% elif post.content|endswith:".mp4,.webm" %}
+                            <video controls class="d-block mb-2" style="max-width: 100px;">
+                                <source src="{{ post.content.url }}" type="video/{{ post.content|file_extension }}">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <p><a href="{{ post.content.url }}" download>Download {{post.name}}.{{ post.content.url|file_extension }}</a></p>
+                        {% endif %}
                     {% endif %}
                     <label for="id_content" class="form-label">Upload File:</label>
                     <input type="file" name="content" id="id_content" class="form-control">
@@ -36,7 +45,13 @@
                 <div id="LinkSection" style="display: none;" class="mb-3">
                     {% if post.link %}
                         <label for="id_link" class="form-label">Current Link:</label>
-                        <p class="text-muted">{{ post.link }}</p>
+                        {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/{{ post.link|extract_youtube_id }}" allowfullscreen></iframe>
+                            </div>
+                        {% else %}
+                            <p class="text-muted"><a href="{{ post.link }}" target="_blank">{{ post.link }}</a></p>
+                        {% endif %}
                     {% endif %}
                     <label for="id_link" class="form-label">Link:</label>
                     <input type="url" name="link" id="id_link" class="form-control" placeholder="Enter URL">

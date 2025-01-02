@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name = 'sender_of_message')
@@ -13,7 +15,7 @@ class Message(models.Model):
 class Chat(models.Model):
     people = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name = 'people_in_chat')
     messages = models.ManyToManyField(Message, related_name='messages_of_chat', blank=True, null=True)
-    last_message = models.OneToOneField(Message, on_delete=models.CASCADE, blank=True, null=True, related_name='last_message_of_chat')
+    last_message = models.OneToOneField(Message, on_delete=models.SET_NULL, blank=True, null=True, related_name='last_message_of_chat')
 
     def get_user_chat_name(self, user):
         chat_name = self.chatnames.filter(user=user).first()
@@ -28,9 +30,9 @@ class Chat(models.Model):
 
         return None
 
-    def get_unread_messages(self, user):
-        messages = self.messages.all().filter(read=False).exclude(sender=user).count()
-        return messages
+    async def unread_count(self, user):
+        unread = await self.messages.filter(read=False).exclude(sender=user).acount()
+        return unread
 
 class ChatName(models.Model):
     chat = models.ForeignKey(Chat, related_name='chatnames', on_delete=models.CASCADE)

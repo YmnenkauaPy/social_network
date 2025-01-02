@@ -8,4 +8,6 @@ urlpatterns = [
     path('login/', views.custom_login_view, name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.register, name='register'),
+    path('theme/<str:theme>/', views.change_theme, name='theme'),
+    path('get/theme/', views.get_current_theme, name='get_current_theme'),
 ]

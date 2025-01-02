@@ -9,4 +9,5 @@ urlpatterns = [
     path('mark-read/<int:pk>/', views.mark_read, name='mark_read'),
     path('upload_image/', views.upload_image, name='upload_image'),
     path('delete_image/<str:folder>/<str:filename>', views.delete_image, name='delete_image'),
+    path('chats/get_unread_counts/', views.get_unread_counts, name='get_unread_counts')
 ]

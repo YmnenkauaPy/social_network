@@ -19,3 +19,6 @@ class CustomUser(AbstractUser):
             receiver=self,
             read=False
         ).count()
+
+class Theme(models.Model):
+    color = models.CharField(max_length=5, default='light')

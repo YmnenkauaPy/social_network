@@ -1,9 +1,9 @@
-from authentication import forms
-from authentication.models import CustomUser
+from authentication.models import CustomUser, Theme
 from posts.models import Post
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from datetime import timedelta
+from django.http import JsonResponse
 from django.utils.timezone import now
 
 def custom_login_view(request):
@@ -14,17 +14,23 @@ def custom_login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect("main") 
+            return redirect("main")
         else:
             return render(request, "registration/login.html", {"error": "Invalid username or password"})
 
     return render(request, "registration/login.html")
 
 
-# def count_unread_notifications(user):
-#     user = CustomUser.objects.get(id=user.id)
-#     unread = user.unread_notifications_count()
-#     return unread
+def change_theme(request, theme):
+    theme_ = get_object_or_404(Theme, id=1) #always only one
+    print(theme)
+    theme_.color = theme
+    theme_.save()
+    return JsonResponse({'status':'ok'})
+
+def get_current_theme(request):
+    theme = Theme.objects.get(id=1)
+    return JsonResponse({'theme': theme.color})
 
 def main(request):
     if not request.user.is_authenticated:
@@ -33,7 +39,7 @@ def main(request):
     friends = request.user.friends.all()
     followings = request.user.followings.all()
     user_ids = list(friends.values_list('id', flat=True)) + list(followings.values_list('id', flat=True))
-    
+
     posts = Post.objects.filter(
         creator_id__in=user_ids,
         created_at__range=[three_days_ago, now()]
@@ -55,7 +61,7 @@ def register(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        profile_picture = request.FILES.get('profile_picture')  
+        profile_picture = request.FILES.get('profile_picture')
 
         if not username or not password:
             return render(request, 'registration/register.html', {
@@ -66,7 +72,7 @@ def register(request):
             username=username,
             profile_picture=profile_picture
         )
-        custom_user.set_password(password)  
+        custom_user.set_password(password)
         custom_user.save()
 
         login(request, custom_user)

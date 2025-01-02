@@ -11,9 +11,9 @@
                 <img src="{{ custom_user.profile_picture.url }}" alt="Profile Picture" class="profile-picture"/>
             </div>
         {% endif %}
-    </div> 
-    
-    <p class="status" id="online-status">{{online}}</p>
+    </div>
+
+    <p class="text-dark" style="font-style: italic" id="online-status">{{online}}</p>
     <p class="mb-2"><strong>Details:</strong> {{ custom_user.details }}</p>
     <p class="mb-2"><strong>Data joined:</strong> {{ custom_user.date_joined|date:"F j, Y" }}</p>
 
@@ -36,14 +36,14 @@
                     {% endif %}
                 </button>
             </form>
-            
+
             <form action="{% url 'be_friends' custom_user.id user.id %}" method="POST" class="friends-form" data-user-id="{{ custom_user.id }}">
                 {% csrf_token %}
-                <button type="submit" 
+                <button type="submit"
                 class="btn btn-lg friends-btn mx-2
                     {% if status == 'Request has been sent' %}btn-secondary
                     {% elif status == 'Unfriend' %}btn-danger
-                    {% else %}btn-primary{% endif %}" 
+                    {% else %}btn-primary{% endif %}"
                     {% if status == 'Request has been sent' %}disabled{% endif %}>
                     {{ status }}
                 </button>
@@ -59,6 +59,7 @@
             </form>
             <br>
             <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ user.id }}">Delete account</button>
+
             <!-- Модальное окно удаления -->
             <div class="modal fade" id="confirmDeleteModal{{ user.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ user.id }}" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
@@ -98,7 +99,7 @@
         <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
             {% for post in posts %}
             <div class="col mb-5">
-                <div class="card h-100">
+                <div class="card h-100" style="background-color: rgba(255, 255, 255, 0.582);">
                 {% if post.content %}
                     {% if post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp" %}
                         <img class = "card-img-top" src="{{ post.content.url }}">
@@ -139,20 +140,6 @@
 
 
 <script>
-    function getCsrfToken() {
-        // Функция для получения CSRF-токена из cookie
-        const name = 'csrftoken';
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.startsWith(name + '=')) {
-                return cookie.substring(name.length + 1);
-            }
-        }
-        return null;
-    }
-
-
     document.addEventListener('DOMContentLoaded', function() {
         const followForms = document.querySelectorAll('.follow-form');
         const friendsForms = document.querySelectorAll('.friends-form');
@@ -209,7 +196,7 @@
                             button.textContent = 'Request has been sent';
                             button.classList.remove('btn-primary', 'btn-danger');
                             button.classList.add('btn-secondary');
-                            button.disabled = true; 
+                            button.disabled = true;
 
                         } else if (data.friend_status === 'unfriend') {
                             button.textContent = 'Add Friend';
@@ -246,20 +233,20 @@
         if (password1 && password2) {
             if (password1 === password2) {
                 mismatchMessage.style.display = 'none';
-                deleteBtn.disabled = false; 
+                deleteBtn.disabled = false;
             } else {
                 mismatchMessage.style.display = 'block';
-                deleteBtn.disabled = true;  
+                deleteBtn.disabled = true;
             }
         } else {
             mismatchMessage.style.display = 'none';
-            deleteBtn.disabled = true;  
+            deleteBtn.disabled = true;
         }
     }
 
     function showCopyNotification(post_id) {
         const notification = document.getElementById(`copy-notification-${post_id}`);
-        notification.style.display = 'block'; 
+        notification.style.display = 'block';
 
         setTimeout(() => {
             notification.style.display = 'none';
@@ -281,13 +268,11 @@
             }
 
             showCopyNotification(post_id);
-            $('#shareModal' + post_id).modal('hide');  
+            $('#shareModal' + post_id).modal('hide');
         } else if (type === 'chats') {
             const csrfToken = getCsrfToken()
             const response = await fetch('/get/chats/');
-            const chats = await response.json(); 
-
-            // Проверка на наличие чатов
+            const chats = await response.json();
 
             const chatListItems = chats.chats.length > 0
                 ? chats.chats.map(chat => `
@@ -296,9 +281,8 @@
                         <label for="chat${chat.id}">${chat.name}</label>
                     </li>
                 `).join('')
-                : "<li class='list-group-item'><p>You don't have any chats to share with.</p></li>"; 
+                : "<li class='list-group-item'><p>You don't have any chats to share with.</p></li>";
 
-            // Генерация модального окна
             const modalContent = `
                 <div id="chatSelectionModal" class="modal" tabindex="-1">
                     <div class="modal-dialog">
@@ -339,7 +323,7 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRFToken': csrfToken, 
+                                'X-CSRFToken': csrfToken,
                             },
                             body: JSON.stringify({
                                 post_id: post_id,
@@ -348,16 +332,16 @@
                         });
 
                         if (response.ok) {
-                            console.log('Сообщение отправлено в чат!');
+                            console.log('Message has been sent to chat!');
                             modal.hide();
                         } else {
-                            console.log('Ошибка при отправке сообщения.');
+                            console.log('Error in sending message.');
                         }
                     } catch (err) {
-                        console.error('Ошибка при отправке сообщения:', err);
+                        console.error('Error in sending message:', err);
                     }
                 } else {
-                    alert('Выберите чат!');
+                    alert('Select chat!');
                 }
             });
 
@@ -382,7 +366,7 @@
     max-width: none;
     animation: slideUp 0.3s ease-in-out;
 }
-    
+
 @keyframes slideUp {
     from {
         transform: translateY(100%);
@@ -391,7 +375,7 @@
         transform: translateY(0);
     }
 }
-    
+
 .profile-container {
     max-width: 600px; /* Optional: limit the width of the profile container */
     margin: 0 auto; /* Center the container */
@@ -415,18 +399,13 @@
 }
 
 .profile-picture {
-    position: absolute; 
-    top: 50%; 
-    left: 50%; 
-    width: auto; 
-    height: 100%; 
-    transform: translate(-50%, -50%); 
-    object-fit: cover; 
-}
-
-.status {
-    font-style: italic;
-    color: #666;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
 }
 
 .user-stats {

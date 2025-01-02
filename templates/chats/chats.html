@@ -7,17 +7,17 @@
 <div class="container mt-4">
     <div class="row">
         <!-- Список чатов слева -->
-        <div class="col-md-4 border-end" style="margin-top: 50px; margin-left: -105px; height: calc(100vh - 50px);">
+        <div class="col-md-4 border-end bg-muted" style="margin-top: 50px; margin-left: -105px; height: calc(100vh - 50px);">
             {% for chat in chats %}
                 <a href="#" class="text-decoration-none text-dark chat-selector"
                    data-chat-id="{{ chat.chat.id }}" id="chat_id">
-                    <div class="card mb-2 border border-dark">
+                    <div class="card mb-2 border border-dark" style="background-color: rgba(253, 253, 253, 0.712);">
                         <div class="card-body">
                             <h5 class="card-title mb-1">{{ chat.chat_name }}</h5>
-                            <p class="card-text text-muted" id = "last_message_{{chat.chat.id}}"
-                            value="{{chat.chat.last_message.content}}"></p>
+                            <i class="card-text text-dark" id = "last_message_{{chat.chat.id}}"
+                            content-value="{{chat.chat.last_message.content}}" file-content-value="{% if chat.chat.last_message.file_content %}{{ chat.chat.last_message.file_content.url }}{% endif %}"></i>
                         </div>
-                        <span class="badge badge-danger" id="unread_msg_count_{{chat.chat.id}}">{% if chat.unread_msg > 0 %} {{ chat.unread_msg }} {% endif %}</span>
+                        <span class="badge badge-danger" id="unread_msgs_{{chat.chat.id}}">{% if chat.unread > 0 %} {{ chat.unread }} {% endif %}</span>
                     </div>
                 </a>
             {% empty %}

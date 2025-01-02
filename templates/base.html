@@ -61,13 +61,19 @@
     </script>
 </head>
 
-<body class="sb-nav-fixed">
+<body class="sb-nav-fixed theme-light bg-light text-dark">
     {% load static %}
     <input type="hidden" id="user" value="{{ request.user.id }}">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark border-bottom border-white">
         <a class="navbar-brand ps-3" href="{% url 'main' %}">Social Network</a>
         <!-- Sidebar Toggle-->
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        <button class="btn btn-link btn-sm position-relative" id="sidebarToggle" href="#!">
+            <i class="fas fa-bars"></i>
+            <span class="badge badge-danger position-absolute" style="top: -5px; right: -10px; display: {% if unread_msg > 0 %}block{% else %}none{% endif %};" id="unread-count-msg2">
+                {{ unread_msg }}
+            </span>
+        </button>
+
         <!-- Navbar Search-->
         <form method="GET" action="{% url 'search_for_users' %}" class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
             <div class="input-group">
@@ -75,6 +81,7 @@
                 <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
             </div>
         </form>
+
         <!-- Navbar-->
         <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
             <li class="nav-item dropdown">
@@ -117,7 +124,7 @@
         </ul>
     </nav>
     <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
+        <div id="layoutSidenav_nav" class="border border-white">
             <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
@@ -133,11 +140,17 @@
                         <form id="CreatePostForm" action="{% url 'create_post' %}" method="POST" style="display: none;">
                             {% csrf_token %}
                         </form>
-                        <a class="nav-link" href="{% url 'chats' %}">
-                            <div class="sb-nav-link-icon"><i class="bi bi-chat-text"></i></div>
-                            Chats
-                            <span class="badge badge-danger" id="unread-count-msg">{% if unread_msg > 0 %} {{ unread_msg }} {% endif %}</span>
+                        <input type="hidden" value="{{ chats_for_unread_msgs }}" id="chats_messages">
+                        <a class="nav-link d-flex align-items-center" href="{% url 'chats' %}">
+                            <div class="sb-nav-link-icon">
+                                <i class="bi bi-chat-text"></i>
+                            </div>
+                            <span class="ml-2">Chats</span>
+                            <span class="badge badge-danger position-absolute" style="top: -5px; display: {% if unread_msg > 0 %}block{% else %}none{% endif %};" id="unread-count-msg">
+                                {{ unread_msg }}
+                            </span>
                         </a>
+
                         <a class="nav-link" id="theme-toggle-btn">
                             <div class="sb-nav-link-icon">
                                 <i id="theme-icon" class="fas fa-sun"></i>
@@ -158,10 +171,56 @@
     {% endblock %}
 
 <script>
-    const userId = document.getElementById('user').value;  // ID пользователя из шаблона
-    const NotificationsSocket = new WebSocket(
-        `ws://${window.location.host}/ws/notifications/${userId}/`
-    );
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                return cookie.substring(name.length + 1);
+            }
+        }
+        return null;
+    }
+
+    const userId = document.getElementById('user').value;
+    const chatListSocket = new WebSocket(`ws://${window.location.host}/ws/chat-list/`);
+
+    chatListSocket.onopen = function () {
+        console.log("WebSocket for chats is on");
+        chatListSocket.send(JSON.stringify({ type: "request_unread_counts" }));
+    };
+
+    chatListSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+
+        if (data.type === "unread_counts") {
+            data.data.forEach(chat => {
+                const unreadBadge = document.getElementById(`unread_msgs_${chat.chat_id}`);
+                if (unreadBadge) {
+                    unreadBadge.innerHTML = chat.unread_count > 0 ? chat.unread_count : '';
+                }
+            });
+
+            // Также обновляем общий счётчик
+            const totalUnreadCount = data.data.reduce((sum, chat) => sum + chat.unread_count, 0);
+            const totalUnreadBadge = document.getElementById("unread-count-msg");
+            const totalUnreadBadge2 = document.getElementById("unread-count-msg2");
+
+            if (totalUnreadBadge) {
+                totalUnreadBadge.style.display = totalUnreadCount > 0 ? "block" : "none";
+                totalUnreadBadge.innerHTML = totalUnreadCount > 0 ? totalUnreadCount : '';
+            }
+
+            if (totalUnreadBadge2) {
+                totalUnreadBadge2.style.display = totalUnreadCount > 0 ? "block" : "none";
+                totalUnreadBadge2.innerHTML = totalUnreadCount > 0 ? totalUnreadCount : '';
+            }
+        }
+    };
+
+    const NotificationsSocket = new WebSocket(`ws://${window.location.host}/ws/notifications/${userId}/`);
+
     NotificationsSocket.onopen = () => {
         NotificationsSocket.send(JSON.stringify({
             type: "fetch_count"
@@ -174,17 +233,18 @@
 
     NotificationsSocket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        console.log(data)
-        const unreadCountElement = document.getElementById('unread-count');
-        const unreadCountElement2 = document.getElementById('unread-count2');
+        let unreadCountElement;
+        let unreadCountElement2;
 
-        if (data.unread > 0) {
-            // Обновляем текст уведомлений
+        unreadCountElement = document.getElementById('unread-count');
+        unreadCountElement2 = document.getElementById('unread-count2');
+
+        if (data.unread_count > 0 && data.event === 'notifications') {
             const notificationList = document.getElementById('notification-list');
+
             if (notificationList) {
                 const newNotification = document.createElement('li');
                 newNotification.classList.add('notification-item', 'mb-3', 'p-3', 'border-bottom');
-
                 newNotification.innerHTML = `
                     <div class="notification-details">
                         <h3 class="h5 mb-2">${data.name}</h3>
@@ -208,7 +268,7 @@
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                         <form action="/delete_notification/${data.id}/" method="POST">
-                                            <input type="hidden" name="csrfmiddlewaretoken" value="${data.csrf_token}">
+                                            <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
                                             <button type="submit" class="btn btn-danger">Delete</button>
                                         </form>
                                     </div>
@@ -220,11 +280,11 @@
                             data.show_accept_buttons
                                 ? `
                                 <form action="/accept_friend_request/${data.id}/" method="POST" class="accept-form">
-                                    <input type="hidden" name="csrfmiddlewaretoken" value="${data.csrf_token}">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
                                     <button type="submit" class="btn btn-sm btn-success">Accept</button>
                                 </form>
                                 <form action="/reject_friend_request/${data.id}/" method="POST" class="reject-form">
-                                    <input type="hidden" name="csrfmiddlewaretoken" value="${data.csrf_token}">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
                                     <button type="submit" class="btn btn-sm btn-danger">Reject</button>
                                 </form>
                             `
@@ -234,32 +294,60 @@
                 `;
                 notificationList.prepend(newNotification);
             }
-            unreadCountElement.innerHTML = parseInt(unreadCountElement.innerHTML || '0') + 1;
-            unreadCountElement2.innerHTML = unreadCountElement.innerHTML
+        }
+        if (data.unread_count > 0) {
+            if (unreadCountElement) {
+                unreadCountElement.innerHTML = parseInt(unreadCountElement.innerHTML || '0');
+            }
+            if (unreadCountElement2) {
+                unreadCountElement2.innerHTML = unreadCountElement ? unreadCountElement.innerHTML : '0';
+            }
         }
     };
 
-    function toggleTheme() {
-        const body = document.body;
+    async function toggleTheme() {
+        const container = document.querySelector('.theme-light');
         const icon = document.getElementById('theme-icon');
-        const currentTheme = body.classList.contains('bg-dark') ? 'dark' : 'light';
+        const currentTheme = container.classList.contains('bg-dark') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-        if (currentTheme === 'dark') {
-            // Переключаем на светлую тему
-            body.classList.remove('bg-dark', 'text-light');
-            body.classList.add('bg-light', 'text-dark');
-            icon.classList.remove('fa-moon');
-            icon.classList.add('fa-sun');
-        } else {
-            // Переключаем на темную тему
-            body.classList.remove('bg-light', 'text-dark');
-            body.classList.add('bg-dark', 'text-light');
+        if (newTheme === 'dark') {
+            container.classList.remove('bg-light', 'text-dark');
+            container.classList.add('bg-dark', 'text-secondary');
             icon.classList.remove('fa-sun');
             icon.classList.add('fa-moon');
+        } else {
+            container.classList.remove('bg-dark', 'text-secondary');
+            container.classList.add('bg-light', 'text-dark');
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
         }
+
+        await fetch(`/theme/${newTheme}/`);
     }
 
     document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const response = await fetch('/get/theme/');
+        const data = await response.json();
+        const currentTheme = data.theme;
+
+        const container = document.querySelector('.theme-light');
+        const icon = document.getElementById('theme-icon');
+
+        if (currentTheme === 'dark') {
+            container.classList.add('bg-dark', 'text-secondary');
+            container.classList.remove('bg-light', 'text-dark');
+            icon.classList.add('fa-moon');
+            icon.classList.remove('fa-sun');
+        } else {
+            container.classList.add('bg-light', 'text-dark');
+            container.classList.remove('bg-dark', 'text-secondary');
+            icon.classList.add('fa-sun');
+            icon.classList.remove('fa-moon');
+        }
+    });
 </script>
 
 </body>

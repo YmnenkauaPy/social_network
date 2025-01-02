@@ -13,7 +13,7 @@
                     <button type="button" class="btn btn-link position-absolute top-0 end-0" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-three-dots"></i>
                     </button>
-                    
+
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">Share link</a></li>
                         {% if request.user == post.creator %}
@@ -43,9 +43,6 @@
                                         </div>
                                         <button class="btn btn-outline-success" onclick="share({{ post.id }}, 'chats')">
                                             <i class="fas fa-comments"></i> Chats
-                                        </button>
-                                        <button class="btn btn-outline-warning" onclick="share({{ post.id }}, 'groups')">
-                                            <i class="fas fa-users"></i> Groups
                                         </button>
                                     </div>
                                 </div>
@@ -103,13 +100,13 @@
                             <p>Follow <a href="{{ post.link }}">{{ post.link }}</a></p>
                         {% endif %}
                     {% endif %}
-                    
-                    <button 
-                        type="button" 
+
+                    <button
+                        type="button"
                         id="{{ post.id }}"
-                        class="me-2 p-0 border-0" 
+                        class="me-2 p-0 border-0"
                         onclick="toggleLike('post', this.id)">
-                        <i {% if user_liked_post %}class="bi bi-heart-fill"{% else %}class="bi bi-heart"{% endif %} style='color:red'></i> 
+                        <i {% if user_liked_post %}class="bi bi-heart-fill"{% else %}class="bi bi-heart"{% endif %} style='color:red'></i>
                         <span>{{ post.like_to_post.count }}</span>
                     </button>
                     <p class="mt-3"><b>{{ post.creator }}</b> {% if post.description %}{{ post.description }}{% endif %}</p>
@@ -117,7 +114,7 @@
                 </div>
             </div>
         </div>
-        
+
         {% include './view_post_comments.html' %}
     </div>
 </div>
@@ -155,14 +152,14 @@
                     <p id="comment_content_${result.comment.id}" style="display:block">${result.comment.content}</p>
                     <input type="text" name="content2" id="content2_${result.comment.id}" class="form-control" style="display:none" value="${result.comment.content}">
                     <div class="d-flex align-items-center">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             id="${result.comment.id}"
                             class="me-2 p-0 border-0"
                             onclick="toggleLike('comment', ${result.comment.id})">
                             <i {% if user_liked_comments|get_value:comment.id %}class="bi bi-hand-thumbs-up-fill"{% else %}class="bi bi-hand-thumbs-up"{% endif %} style='color:green'></i> <span>0</span>
                         </button>
-                        
+
                         ${result.comment.creator_id == user ? `
                             <button type="button" id="edit_${result.comment.id}" class="btn btn-sm btn-warning me-2" style="display:block;" onclick="Edit(this.id, ${result.comment.id})">
                                 <i class="bi bi-pencil"></i>
@@ -206,7 +203,7 @@
                 form.reset();
                 const commentScroll = document.getElementById('all_comments');
                 commentScroll.scrollTop = commentScroll.scrollHeight;
-                
+
             } else {
                 const error = await response.json();
                 alert(error.message || 'Failed to add comment. Please try again.');
@@ -219,8 +216,8 @@
 
     function showCopyNotification(post_id) {
         const notification = document.getElementById(`copy-notification-${post_id}`);
-        notification.style.display = 'block'; 
-                
+        notification.style.display = 'block';
+
         setTimeout(() => {
             notification.style.display = 'none';
         }, 2000);
@@ -237,19 +234,95 @@
                     console.error('Error in copying to clipboard:', err);
                 }
             } else {
-                console.warn('API clipboard is not allowed');
+                console.warn('API clip board is not allowed');
             }
 
             showCopyNotification(post_id);
-            $('#shareModal' + post_id).modal('hide');  
+            $('#shareModal' + post_id).modal('hide');
         } else if (type === 'chats') {
-            // Add logic for chats.
-        } else if (type === 'groups') {
-            // Add logic for groups.
+            const csrfToken = getCsrfToken()
+            const response = await fetch('/get/chats/');
+            const chats = await response.json();
+
+            const chatListItems = chats.chats.length > 0
+                ? chats.chats.map(chat => `
+                    <li class="list-group-item">
+                        <input type="radio" name="chat" value="${chat.id}" id="chat${chat.id}">
+                        <label for="chat${chat.id}">${chat.name}</label>
+                    </li>
+                `).join('')
+                : "<li class='list-group-item'><p>You don't have any chats to share with.</p></li>";
+
+            const modalContent = `
+                <div id="chatSelectionModal" class="modal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Choose chat</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <ul id="chatList" class="list-group">
+                                    ${chatListItems}
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button id="sendMessage" type="button" class="btn btn-primary">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Добавляем модальное окно в DOM
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+
+            // Показ модального окна
+            const modal = new bootstrap.Modal(document.getElementById('chatSelectionModal'));
+            modal.show();
+
+            // Логика отправки сообщения в выбранный чат
+            document.getElementById('sendMessage').addEventListener('click', async () => {
+                const selectedChat = document.querySelector('input[name="chat"]:checked');
+
+                if (selectedChat) {
+                    const chatId = selectedChat.value;
+
+                    try {
+                        const response = await fetch(`/send_to_chat/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: JSON.stringify({
+                                post_id: post_id,
+                                chat_id: chatId,
+                            }),
+                        });
+
+                        if (response.ok) {
+                            console.log('Message has been sent to chat!');
+                            modal.hide();
+                        } else {
+                            console.log('Error in sending message.');
+                        }
+                    } catch (err) {
+                        console.error('Error in sending message:', err);
+                    }
+                } else {
+                    alert('Select chat!');
+                }
+            });
+
+            // Удаление модального окна после закрытия
+            document.getElementById('chatSelectionModal').addEventListener('hidden.bs.modal', () => {
+                document.getElementById('chatSelectionModal').remove();
+            });
         }
     }
 
-    async function toggleLike(objectType, objectId) { 
+    async function toggleLike(objectType, objectId) {
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const isPost = objectType === 'post';
 
@@ -279,7 +352,7 @@
                         icon.classList.add('bi-heart')
                     }
                 } else {
-     
+
                     if (data.liked) {
                         icon.classList.remove('bi-hand-thumbs-up')
                         icon.classList.add('bi-hand-thumbs-up-fill')
@@ -332,13 +405,13 @@
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    content.textContent = data.content; 
+                    content.textContent = data.content;
                     editing_content.style.display = 'none';
                     content.style.display = 'block';
                     cancel.style.display = 'none';
                     submit.style.display = 'none';
                     edit.style.display = 'block';
-       
+
                 } else {
                     console.error('Error:', data.error);
                 }
@@ -348,6 +421,5 @@
 
         }
     }
-
 </script>
 {% endblock %}

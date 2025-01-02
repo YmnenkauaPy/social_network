@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-r#g$7cn==m$0c0xvn*@mui47-1xv)&xz_ru-df6nr60-q#l$6j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.0.106']
+ALLOWED_HOSTS = ['192.168.0.106', '192.168.1.16']
 
 # Application definition
 
@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'notifications',
     'chats',
     'channels',
-    
+
 ]
 
 MIDDLEWARE = [
@@ -142,5 +142,5 @@ LOGOUT_REDIRECT_URL = '/'
 
 AUTH_USER_MODEL = "authentication.CustomUser"
 
-MEDIA_URL = '/media/' 
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

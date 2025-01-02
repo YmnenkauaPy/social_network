@@ -9,28 +9,28 @@
             <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded shadow-sm">
                 <div class="card-header text-white d-flex align-items-center">
                     <img {% if user.profile_picture %}src="{{ user.profile_picture.url }}"{% else %}src="{% static 'images/None.png' %}"{% endif %} alt="Profile picture" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                    <a class="h5 text-decoration-none text-primary" href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
+                    <a class="h5 text-decoration-none text-muted" href="{% url 'profile' user.id %}" style="text-decoration: none; color: inherit;"><span>{{ user.username }}</span></a>
                 </div>
 
                 <div class="ml-auto d-flex">
                     <form action="{% url 'follow_user' user.id %}" method="POST" class="follow-form" data-user-id="{{ user.id }}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-sm follow-btn mr-3 mx-2">
-                            {% if custom_user in user.followings.all %}
+                        <button type="submit" class="btn btn-danger btn-sm follow-btn mr-3 mx-2">
+                            {% if user in request.user.followings.all %}
                                 Unfollow
                             {% else %}
                                 Follow
                             {% endif %}
                         </button>
                     </form>
-                    
+
                     <form action="{% url 'be_friends' user.id request.user.id %}" method="POST" class="friends-form" data-user-id="{{ user.id }}">
                         {% csrf_token %}
-                        <button type="submit" 
+                        <button type="submit"
                             class="btn btn-sm friends-btn mx-2
                             {% if status == 'Request has been sent' %}btn-secondary
                             {% elif status == 'Unfriend' %}btn-danger
-                            {% else %}btn-primary{% endif %}" 
+                            {% else %}btn-primary{% endif %}"
                             {% if status == 'Request has been sent' %}disabled{% endif %}>
                             {{ status }}
                         </button>
@@ -67,6 +67,13 @@
                     if (data.status === 'ok') {
                         const button = this.querySelector('.follow-btn');
                         button.textContent = (data.follow_status === 'followed') ? 'Unfollow' : 'Follow';
+                        if (data.follow_status != 'followed') {
+                            button.classList.remove('btn-danger')
+                            button.classList.add('btn-primary')
+                        } else {
+                            button.classList.add('btn-danger')
+                            button.classList.remove('btn-primary')
+                        }
                     } else {
                         console.error('Error:', data.message);
                     }
@@ -100,14 +107,14 @@
                             button.textContent = 'Request has been sent';
                             button.classList.remove('btn-primary', 'btn-danger');
                             button.classList.add('btn-secondary');
-                            button.disabled = true; 
+                            button.disabled = true;
 
                         } else if (data.friend_status === 'friend') {
                             button.textContent = 'Unfriend';
                             button.classList.remove('btn-primary', 'btn-secondary');
                             button.classList.add('btn-danger');
                             button.disabled = false;
-                            
+
                         } else if (data.friend_status === 'unfriend') {
                             button.textContent = 'Add Friend';
                             button.classList.remove('btn-secondary', 'btn-danger');
