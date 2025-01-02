@@ -239,8 +239,8 @@
 
             showCopyNotification(post_id);
             $('#shareModal' + post_id).modal('hide');
+
         } else if (type === 'chats') {
-            const csrfToken = getCsrfToken()
             const response = await fetch('/get/chats/');
             const chats = await response.json();
 
@@ -293,7 +293,7 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRFToken': csrfToken,
+                                'X-CSRFToken': getCsrfToken(),
                             },
                             body: JSON.stringify({
                                 post_id: post_id,
@@ -323,7 +323,6 @@
     }
 
     async function toggleLike(objectType, objectId) {
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const isPost = objectType === 'post';
 
         const adjustedUrl = isPost ? `/post/like/${objectId}/` : `/comment/like/${objectId}/`;
@@ -332,7 +331,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
+                    'X-CSRFToken': getCsrfToken(),
                 },
                 body: JSON.stringify({}),
             });
@@ -397,7 +396,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': getCsrfToken()
                 },
                 body: JSON.stringify({ content: editing_content.value })
             });

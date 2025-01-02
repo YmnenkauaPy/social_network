@@ -23,7 +23,6 @@ def custom_login_view(request):
 
 def change_theme(request, theme):
     theme_ = get_object_or_404(Theme, id=1) #always only one
-    print(theme)
     theme_.color = theme
     theme_.save()
     return JsonResponse({'status':'ok'})
@@ -35,15 +34,30 @@ def get_current_theme(request):
 def main(request):
     if not request.user.is_authenticated:
         return redirect('login')
-    three_days_ago = now() - timedelta(days=3)
+
+    time_frames = [
+        (timedelta(days=3), '3 days'),
+        (timedelta(weeks=1), 'week'),
+        (timedelta(weeks=2), '2 weeks'),
+        (timedelta(weeks=4), '1 month'),
+        (timedelta(weeks=26), '6 months'),
+        (timedelta(weeks=52), '1 year'),
+    ]
+
     friends = request.user.friends.all()
     followings = request.user.followings.all()
     user_ids = list(friends.values_list('id', flat=True)) + list(followings.values_list('id', flat=True))
 
-    posts = Post.objects.filter(
-        creator_id__in=user_ids,
-        created_at__range=[three_days_ago, now()]
-    ).order_by('-created_at')
+    for time_frame, time_label  in time_frames:
+        start_time = now() - time_frame
+        posts = Post.objects.filter(
+            creator_id__in=user_ids,
+            created_at__gte=start_time
+        ).order_by('-created_at')
+
+        if posts.exists():
+            time = time_label
+            break
 
     user_posts = {}
     for post in posts:
@@ -54,7 +68,9 @@ def main(request):
     return render(request, 'registration/main.html', {
         'user_posts': user_posts,
         'friends': friends,
+        'time':time,
     })
+
 
 
 def register(request):

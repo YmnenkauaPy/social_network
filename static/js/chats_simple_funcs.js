@@ -23,7 +23,7 @@ function formatDate(dateString) {
     }
 }
 
-// Функция для усечения текста
+// Function for truncating text
 function truncateText(text, maxLength) {
     if (text.length > maxLength) {
         return text.slice(0, maxLength) + '...';
@@ -67,7 +67,7 @@ function previewImage(event) {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': getCsrfToken()
             }
         })
         .then(response => response.json())
@@ -86,21 +86,6 @@ function previewImage(event) {
 }
 
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
 function removeImage(event) {
     console.log(event)
     const preview = document.getElementById('image-preview');
@@ -115,7 +100,7 @@ function removeImage(event) {
             fetch(`/delete_image/${ImagePath}`, {
                 method: 'DELETE',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-CSRFToken': getCsrfToken()
                 }
             })
             .then(response => response.json())

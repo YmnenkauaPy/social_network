@@ -13,7 +13,7 @@
         {% endif %}
     </div>
 
-    <p class="text-dark" style="font-style: italic" id="online-status">{{online}}</p>
+    <p class="text-muted" style="font-style: italic" id="online-status">{{online}}</p>
     <p class="mb-2"><strong>Details:</strong> {{ custom_user.details }}</p>
     <p class="mb-2"><strong>Data joined:</strong> {{ custom_user.date_joined|date:"F j, Y" }}</p>
 
@@ -100,35 +100,35 @@
             {% for post in posts %}
             <div class="col mb-5">
                 <div class="card h-100" style="background-color: rgba(255, 255, 255, 0.582);">
-                {% if post.content %}
-                    {% if post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp" %}
-                        <img class = "card-img-top" src="{{ post.content.url }}">
-                    {% elif post.content.url|endswith:".mp4" %}
-                        <div class="ratio ratio-16x9">
-                            <video width="320" height="240" controls>
-                                <source src="{{ post.content.url }}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
-                    {% else %}
-                        {% with post.content.url|get_file_icon as file_icon %}
-                            <img src="{% static file_icon %}" alt="File Icon" class="card-img-top">
-                        {% endwith %}
+                    {% if post.content %}
+                        {% if post.content.url|endswith:".png,.jpg,.jpeg,.gif,.webp" %}
+                            <img class = "card-img-top" src="{{ post.content.url }}">
+                        {% elif post.content.url|endswith:".mp4" %}
+                            <div class="ratio ratio-16x9">
+                                <video width="320" height="240" controls>
+                                    <source src="{{ post.content.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        {% else %}
+                            {% with post.content.url|get_file_icon as file_icon %}
+                                <img src="{% static file_icon %}" alt="File Icon" class="card-img-top">
+                            {% endwith %}
+                        {% endif %}
+                        {% include './post_content.html' %}
+                    {% elif post.link %}
+                        {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
+                            {% with post.link|extract_youtube_id as video_id %}
+                                {% if video_id %}
+                                    {% include './post_link_video.html' %}
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            {% include './post_link.html' %}
+                        {% endif %}
+                    {% elif not post.link and not post.content and post.description %}
+                        {% include './post_text.html' %}
                     {% endif %}
-                    {% include './post_content.html' %}
-                {% elif post.link %}
-                    {% if "youtube.com" in post.link or "youtu.be" in post.link or "www.youtube.com" in post.link %}
-                        {% with post.link|extract_youtube_id as video_id %}
-                            {% if video_id %}
-                                {% include './post_link_video.html' %}
-                            {% endif %}
-                        {% endwith %}
-                    {% else %}
-                        {% include './post_link.html' %}
-                    {% endif %}
-                {% elif not post.link and not post.content and post.description %}
-                    {% include './post_text.html' %}
-                {% endif %}
                 </div>
             </div>
             {% empty %}

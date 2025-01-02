@@ -4,7 +4,7 @@
 {% load custom_tags %}
 {% load static %}
 <div style="margin-top: 100px;">
-    <h2 class="ms-4"><b>Posts for the last 3 days</b></h2>
+    <h2 class="ms-4"><b>Posts for the last {{time}}</b></h2>
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-8">
@@ -21,7 +21,6 @@
 
                                         {% if post.content and not post.content.url|endswith:".mp4" %}
                                             <img class="card-img-top" src="{{ post.content.url }}" alt="Post content">
-
                                         {% elif post.content and post.content.url|endswith:".mp4" %}
                                             <div class="ratio ratio-16x9">
                                                 <video width="320" height="240" controls>
@@ -29,12 +28,11 @@
                                                     Your browser does not support the video tag.
                                                 </video>
                                             </div>
-
                                         {% elif post.link %}
                                             {% with post.link|extract_youtube_id as video_id %}
                                                 {% if video_id %}
-                                                    <div>
-                                                        <iframe class="card-img-top" src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allowfullscreen></iframe>
+                                                    <div class="ratio ratio-16x9">
+                                                        <iframe src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allowfullscreen></iframe>
                                                     </div>
                                                 {% endif %}
                                             {% endwith %}

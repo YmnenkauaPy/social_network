@@ -7,7 +7,7 @@
 <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
     <div class="text-center d-flex justify-content-center align-items-center gap-2 mt-2">
         <a class="btn btn-outline-dark mt-auto" href="{% url 'post_detail' post.id %}">View</a>
-        {% if post.creator.id == user.id %}             
+        {% if post.creator.id == user.id %}
             <form method="GET" action="{% url 'edit_post' post.id %}">
                 <button type="submit" id="edit" class="btn btn-sm btn-warning me-2">
                     <i class="bi bi-pencil"></i>
@@ -20,7 +20,7 @@
             <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">
                 <i class="fas fa-share-alt"></i>
             </button>
-            
+
             <!-- Модальное окно поделиться -->
             <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-bottom">

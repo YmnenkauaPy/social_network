@@ -54,12 +54,11 @@
                 event.preventDefault();
 
                 const url = this.getAttribute('action');
-                const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
 
                 fetch(url, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': csrfToken,
+                        'X-CSRFToken': getCsrfToken(),
                         'Content-Type': 'application/json'
                     }
                 })
@@ -90,12 +89,11 @@
                 event.preventDefault();
 
                 const url = this.getAttribute('action');
-                const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
 
                 fetch(url, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': csrfToken,
+                        'X-CSRFToken': getCsrfToken(),
                         'Content-Type': 'application/json'
                     }
                 })

@@ -1,11 +1,10 @@
-
 <div class="col-md-8 d-flex flex-column" style="height: 100vh; width: 100%;" id="chat-display">
     <div class="chat-header p-2 border-bottom" style="height: 60px; margin-top: 110px;">
         <h4 class="mb-0" style="font-size: 1.25rem;" name="{{ chat_id }}" id="chatId">{{ chat_name }}</h4>
         <small class="mb-0" style="font-size: 0.8rem;"><i>{{ last_seen }}</i></small>
     </div>
 
-    <!-- Сообщения -->
+    <!-- Messages -->
     <div class="flex-grow-1 overflow-auto p-2" id="chat-scroll">
         <div id="chat-log" class="d-flex flex-column gap-2">
 
@@ -13,7 +12,7 @@
     </div>
 
 
-    <div id="reply-message" style="display: none; background-color: #f1f1f1; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: 'Courier New', Courier, monospace; position: relative;">
+    <div id="reply-message" class="bg-light p-2 border rounded mb-2 d-none" style="display: none; background-color: #f1f1f1; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: 'Courier New', Courier, monospace; position: relative;">
         <a href="javascript:void(0)" onclick="findMessageThatWasReplied()">
             <strong>Replying to:</strong> <span id="reply-content"></span>
         </a>
@@ -24,20 +23,20 @@
         <i class="bi bi-camera" aria-hidden="true"></i>
     </label>
 
-    <!-- Скрытый input для загрузки файла -->
+    <!-- Hidden input for uploading file -->
     <input type="file" id="file-upload" accept="image/*" style="display: none;" onchange="previewImage(event)">
 
-    <!-- Предпросмотр изображения -->
+    <!-- Preview image -->
     <div id="image-preview" class="mb-2" style="max-width: 100%; height: auto; display: none; position: relative;">
         <img id="preview-img" src="" alt="Image Preview" style="max-width: 200px; max-height: 100px; object-fit: cover;">
 
-        <!-- Кнопка для удаления изображения -->
+        <!-- Button to delete image -->
         <span id="remove-image" onclick="removeImage('delete')" style="position: absolute; top: 5px; right: 5px; cursor: pointer; font-size: 24px; color: #888;">&times;</span>
     </div>
 
     <form method="POST" class="d-flex align-items-center p-2 border-top bg-muted" style="position: sticky; bottom: 0;" id="message-form">
         {% csrf_token %}
-        <!-- Поле ввода сообщения -->
+        <!-- Message input field -->
         <textarea id="chat-message-input" name="content" style='background-color: #ffffff83;' class="form-control me-2"
         rows="1" placeholder="Type a message..." style="resize: none; height: 20px;"
         oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 100) + 'px';"></textarea>
