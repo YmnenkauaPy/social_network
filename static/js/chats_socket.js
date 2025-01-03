@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const formattedDate = formatDate(date);
 
                         let truncatedText;
-                        console.log(msg.replied_to_content)
+        
                         if (msg.replied_to_content) {
                             truncatedText = truncateText(msg.replied_to_content, 15);
                         }
