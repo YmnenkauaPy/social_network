@@ -69,7 +69,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
                 user_liked = await sync_to_async(lambda: user in message.liked.all())()
                 liked = await sync_to_async(lambda: message.liked.count())()
-
+                
                 await self.channel_layer.group_send(
                     self.group_name,
                     {
@@ -77,7 +77,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         'id': message.id,
                         'message': message.content if message.content else '',
                         'replied_to_id': message.replied_to_id,
-                        'replied_to_content': message.replied_to.content if message.replied_to else None,
+                        'replied_to_content': await sync_to_async(
+                            lambda: (
+                                message.replied_to.content if message.replied_to and message.replied_to.content else "<b>photo</b>"
+                            ) if message.replied_to else None)(),
                         'sent_at': message.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
                         'sender_id': user.id,
                         'sender_name': user.username,
@@ -136,7 +139,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'sender_name': event['sender_name'],
             'sender_profile_pic': event['sender_profile_pic'],
             'replied_to_id': event['replied_to_id'] if event['replied_to_id'] else None,
-            'replied_to_content': event['replied_to_content'] if  event['replied_to_content'] else None,
+            'replied_to_content': event['replied_to_content'] if event['replied_to_content'] else None,
             'liked': event['liked'],
             'user_liked': event['user_liked'],
             'read':event['read'],
@@ -189,7 +192,15 @@ class ChatListConsumer(AsyncWebsocketConsumer):
     async def send_unread_counts(self, chat_id=None):
         if chat_id:
             chat = await database_sync_to_async(Chat.objects.get)(id=chat_id)
-            unread_counts = [{'chat_id': chat.id,'unread_count': await chat.unread_count(self.user), 'last_message': await sync_to_async(lambda: chat.last_message.content)()}]
+            unread_counts = [
+                {"chat_id": chat.id,
+                "unread_count": await chat.unread_count(self.user),
+                'last_message': await sync_to_async(
+                    lambda: (
+                        chat.last_message.content if chat.last_message and chat.last_message.content else "<b>photo</b>"
+                    ) if chat.last_message else "<b>no messages</b>"
+                )()}
+                ]
         else:
             chats = await sync_to_async(list)(Chat.objects.filter(people=self.user))
 

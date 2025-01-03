@@ -37,6 +37,7 @@
                                                 {% endif %}
                                             {% endwith %}
                                         {% endif %}
+                                        <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-dark mt-2">Read more</a>
                                     </div>
                                 </div>
                             {% endif %}
@@ -75,7 +76,9 @@
                                                     <a href="{{ post.content.url }}" class="btn btn-primary mt-2">Download file</a>
                                                 {% endif %}
                                             </div>
+                                            <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-dark mt-2">Read more</a>
                                         </div>
+
                                     {% endif %}
                                 </a>
                             {% endfor %}

@@ -228,10 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const formattedDate = formatDate(date);
 
                         let truncatedText;
+                        console.log(msg.replied_to_content)
                         if (msg.replied_to_content) {
                             truncatedText = truncateText(msg.replied_to_content, 15);
                         }
-                        console.log('haha', formattedContent)
+
                         if (isOwnMessage) {
                             messageElement = `
                                 <div class="d-flex align-items-start justify-content-end mb-2">

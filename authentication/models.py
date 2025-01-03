@@ -23,3 +23,4 @@ class CustomUser(AbstractUser):
 
 class Theme(models.Model):
     color = models.CharField(max_length=5, default='light')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

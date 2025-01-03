@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.conf import settings
 from django.apps import apps
 from django.contrib.auth.forms import SetPasswordForm
-from django.http import Http404
+
 
 User = apps.get_model(settings.AUTH_USER_MODEL)
 
@@ -68,7 +68,7 @@ def reset_password(request, uidb64, token):
                 form.save()
                 login(request, user)
                 messages.success(request, "Your password has been reset successfully.")
-                return redirect('login') 
+                return redirect('login')
         else:
             form = SetPasswordForm(user)
         return render(request, 'reset_password.html', {'form': form})
@@ -99,7 +99,10 @@ def custom_login_view(request):
 
 
 def change_theme(request, theme):
-    theme_ = get_object_or_404(Theme, id=1) #always only one
+    try:
+        theme_ = get_object_or_404(Theme, user=request.user)
+    except:
+        theme_ = Theme(user=request.user)
     theme_.color = theme
     theme_.save()
     return JsonResponse({'status':'ok'})
@@ -116,9 +119,9 @@ def main(request):
         (timedelta(days=3), '3 days'),
         (timedelta(weeks=1), 'week'),
         (timedelta(weeks=2), '2 weeks'),
-        (timedelta(weeks=4), '1 month'),
+        (timedelta(weeks=4), 'month'),
         (timedelta(weeks=26), '6 months'),
-        (timedelta(weeks=52), '1 year'),
+        (timedelta(weeks=52), 'year'),
     ]
 
     friends = request.user.friends.all()

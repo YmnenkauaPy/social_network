@@ -7,29 +7,43 @@ function extractLinks(value) {
 function formatContent(msg) {
     let formattedContent = '';
 
-    const maxLength = 25;  // Set maximum characters per line
-    const words = msg.split(/(\s+)/);  // Split by spaces and keep spaces in the array
+    const maxLength = 25;
+    const words = msg.split(/(\s+)/);
     let currentLine = '';
 
-    for (const word of words) {
+    for (let word of words) {
         if (word.trim() === '') {
-            currentLine += word; 
+            currentLine += word;
             continue;
         }
 
-        // Check if adding the next word exceeds maxLength
-        if (currentLine.length + word.length > maxLength) {
-            if (currentLine.length > 0) {
-                formattedContent += currentLine + '<br>';  // Add the current line to formattedContent
+        while (currentLine.length + word.length > maxLength) {
+            const availableSpace = maxLength - currentLine.length;
+
+            if (currentLine.length === 0) {
+                formattedContent += word.substring(0, maxLength) + '<br>';
+                word = word.substring(maxLength);
+            } else {
+                formattedContent += currentLine + '<br>';
+                currentLine = '';
             }
-            currentLine = word;  // Start a new line with the current word
-        } else {
-            currentLine += word;  // Add the word to the current line
+
+            if (word.length > 0) {
+                if (word.length > availableSpace) {
+                    currentLine = word.substring(0, availableSpace);
+                    word = word.substring(availableSpace);
+                } else {
+                    currentLine = word;
+                    word = '';
+                }
+            }
         }
+
+        currentLine += word;
     }
 
     if (currentLine) {
-        formattedContent += currentLine;  // Add any remaining content
+        formattedContent += currentLine;
     }
 
     return formattedContent;

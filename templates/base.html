@@ -204,7 +204,17 @@
 
                     const last_message = document.getElementById(`last_message_${chat.chat_id}`)
                     if (last_message) {
-                        last_message.innerHTML = chat.last_message
+                        const content = last_message.getAttribute('content-value');
+                        const file = last_message.getAttribute('file-content-value');
+
+                        if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)) {
+                            last_message.innerHTML = `<b>photo</b>`
+                        } else if (content) {
+                            const truncatedText = truncateText(content, 25);
+                            last_message.innerHTML = truncatedText;
+                        } else if (!content && !file) {
+                            last_message.innerHTML = '<b>No messages</b>';
+                        }
                     }
                 });
 
