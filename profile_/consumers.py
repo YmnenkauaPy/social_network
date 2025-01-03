@@ -1,5 +1,5 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.utils.timezone import now
+from channels.exceptions import DenyConnection
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.apps import apps
@@ -8,10 +8,12 @@ from django.utils import timezone
 
 class UserStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.user_id = self.scope['user'].id
-        await self.update_user_status_in_db(is_online=True)
-
-        await self.accept()
+        if self.scope["user"].is_authenticated:
+            self.user_id = self.scope["user"].id
+            await self.update_user_status_in_db(is_online=True)
+            await self.accept()
+        else:
+            raise DenyConnection("User not authenticated")
 
     async def disconnect(self, close_code):
         self.user_id = self.scope['user'].id

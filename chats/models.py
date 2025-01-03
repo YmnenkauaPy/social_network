@@ -1,7 +1,5 @@
 from django.db import models
 from django.conf import settings
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 
 class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name = 'sender_of_message')
@@ -27,12 +25,13 @@ class Chat(models.Model):
 
         if another_person.exists():
             return another_person.first()
-
         return None
 
     async def unread_count(self, user):
-        unread = await self.messages.filter(read=False).exclude(sender=user).acount()
-        return unread
+        if self.messages:
+            unread = await self.messages.filter(read=False).exclude(sender=user).acount()
+            return unread
+        return 0
 
 class ChatName(models.Model):
     chat = models.ForeignKey(Chat, related_name='chatnames', on_delete=models.CASCADE)

@@ -7,27 +7,6 @@
         Delete <b>all</b> notifications
     </button>
 
-    <!-- Модальное окно удаления -->
-    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmDeleteLabel">Confirm deletion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to delete ALL these notifications? You can't undo it.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form action="{% url 'clear_notifications' %}" method="POST">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
     <ul class="list-unstyled" id="notification-list">
         {% for n in notifications.all %}
             <li class="mb-3 p-3 border-bottom">
@@ -37,45 +16,22 @@
                         <p>{{ n.description }}</p>
                         <small>{{ n.created_at }}</small>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center">
+                        <!-- forms for accept/reject -->
+                        {% if n.sender != n.receiver and n.name == 'Friends' and n.answer is None and 'stopped' not in n.description and 'accepted' not in n.description and 'rejected' not in n.description %}
+                            <form action="{% url 'accept_friend_request' n.id %}" method="POST" class="mx-2 accept-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                            </form>
+                            <form action="{% url 'reject_friend_request' n.id %}" method="POST" class="mx-2 reject-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                            </form>
+                        {% endif %}
+                        <!-- Delete button -->
                         <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ n.id }}">
                             <i class="bi bi-trash"></i>
                         </button>
-
-                        <!-- Модальное окно удаления -->
-                        <div class="modal fade" id="confirmDeleteModal{{ n.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ n.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="confirmDeleteLabel{{ n.id }}">Confirm deletion</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to delete this notification? You can't undo it.
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <form action="{% url 'delete_notification' n.id %}" method="POST">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex">
-                            {% if n.sender != n.receiver and 'stopped' not in n.description and 'accepted' not in n.description and n.name == 'Friends' and n.answer is None %}
-                                <form action="{% url 'accept_friend_request' n.id %}" method="POST" class="mx-2">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
-                                </form>
-                                <form action="{% url 'reject_friend_request' n.id %}" method="POST" class="mx-2">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                </form>
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
             </li>
@@ -86,31 +42,59 @@
 </div>
 
 <script>
-    document.querySelectorAll('.accept-form, .reject-form').forEach(form => {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
+document.querySelectorAll('.accept-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
 
-            const url = this.getAttribute('action');
+        const url = this.getAttribute('action');
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCsrfToken(),
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    this.parentElement.innerHTML = `<p>${data.message}</p>`;
-                } else {
-                    console.error('Error:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Request failed', error);
-            });
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                this.parentElement.innerHTML = `<p>${data.message}</p>`; // Update notification
+            } else {
+                console.error('Error:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Request failed', error);
         });
     });
+});
+
+document.querySelectorAll('.reject-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const url = this.getAttribute('action');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                this.parentElement.innerHTML = `<p>${data.message}</p>`; // Update notification
+            } else {
+                console.error('Error:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Request failed', error);
+        });
+    });
+});
+
 </script>
 {% endblock %}

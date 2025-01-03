@@ -73,6 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const answer = await response.json();
             const exists = answer.messages.some(message => Number(message.id) === Number(data.id));
 
+            const noMessagesElement = document.getElementById('noMessages');
+            if (noMessagesElement) {
+                noMessagesElement.remove();
+            }
+
             if (data['event'] === 'send_message' && exists) {
                 const chatLog = document.getElementById('chat-log');
                 const isOwnMessage = data.sender_id === Number(user);
@@ -82,10 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let formattedContent = '';
 
                 if (data.content) {
-                    const maxLength = 25;
-                    for (let i = 0; i < data.content.length; i += maxLength) {
-                        formattedContent += data.content.slice(i, i + maxLength) + '<br>';
-                    }
+                    formattedContent = formatContent(data.content);
 
                     const links = extractLinks(formattedContent);
                     formattedContent = links.length > 0
@@ -206,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatLog.innerHTML = '';
 
                 if (data.messages.length === 0) {
-                    chatLog.innerHTML = '<p class="text-muted">No messages yet.</p>';
+                    chatLog.innerHTML = '<p id="noMessages" class="text-muted">No messages yet.</p>';
                 } else {
                     data.messages.forEach(msg => {
                         const isOwnMessage = msg.sender_id === Number(user);
@@ -214,10 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         let formattedContent = '';
                         if (msg.content) {
-                            const maxLength = 25;
-                            for (let i = 0; i < msg.content.length; i += maxLength) {
-                                formattedContent += msg.content.slice(i, i + maxLength) + '<br>';
-                            }
+                            formattedContent = formatContent(msg.content);
 
                             const links = extractLinks(formattedContent);
                             formattedContent = links.length > 0
@@ -232,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (msg.replied_to_content) {
                             truncatedText = truncateText(msg.replied_to_content, 15);
                         }
-
+                        console.log('haha', formattedContent)
                         if (isOwnMessage) {
                             messageElement = `
                                 <div class="d-flex align-items-start justify-content-end mb-2">

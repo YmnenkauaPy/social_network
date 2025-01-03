@@ -5,7 +5,9 @@ from profile_.views import get_last_seen_text
 from django.core.files.storage import FileSystemStorage
 import os
 from django.conf import settings
+from asgiref.sync import async_to_sync
 from urllib.parse import quote
+from django.templatetags.static import static
 
 def get_unread_counts(request):
     if request.user.is_authenticated:
@@ -51,8 +53,8 @@ def view_chats(request):
         except:
             chat.last_message = None
         chat.save()
-
-        chats_.append({'chat':chat, 'chat_name':chat.get_user_chat_name(request.user)})
+        unread = async_to_sync(chat.unread_count)(request.user)
+        chats_.append({'chat':chat, 'chat_name':chat.get_user_chat_name(request.user), 'unread': unread})
 
     return render(request, 'chats/chats.html', {'chats':chats_})
 
@@ -88,7 +90,7 @@ def get_messages(request, chat_id):
             'id': msg.id,
             'sender_id': msg.sender.id,
             'sender_name': msg.sender.username,
-            'sender_profile_pic': msg.sender.profile_picture.url,
+            'sender_profile_pic': msg.sender.profile_picture.url if msg.sender.profile_picture else static('images/None.png'),
             'content': msg.content,
             'sent_at': msg.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
             'replied_to_content': msg.replied_to.content if msg.replied_to else None,

@@ -17,7 +17,6 @@ def accept_friend_request(request, notification_id):
     if request.method == "POST":
         notification = get_object_or_404(m.Notification, id=notification_id)
 
-        # Проверяем, что запрос не обработан
         if notification.answer is None:
             sender = notification.sender
             receiver = notification.receiver
@@ -25,7 +24,6 @@ def accept_friend_request(request, notification_id):
             sender.friends.add(receiver)
             receiver.friends.add(sender)
 
-            # Помечаем запрос как принятый
             notification.answer = True
             notification.save()
 
@@ -35,33 +33,34 @@ def accept_friend_request(request, notification_id):
 
             chatname = ChatName(chat=chat, user=sender, name=receiver.username)
             chatname.save()
-            
+
             chatname = ChatName(chat=chat, user=receiver, name=sender.username)
             chatname.save()
 
             notif = m.Notification(name='Friends', description=f"{receiver} accepted your friend's request!", receiver=sender, sender=receiver)
-            notif.save() 
+            notif.save()
 
             return JsonResponse({'status': 'ok', 'message': 'Friend request accepted'})
         else:
             return JsonResponse({'status': 'error', 'message': 'Request already processed'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
 
-def reject_friend_request(request, notification_id, whom, who):
+def reject_friend_request(request, notification_id):
     if request.method == "POST":
         notification = get_object_or_404(m.Notification, id=notification_id)
 
-        # Проверяем, что запрос не обработан
         if notification.answer is None:
-            # Помечаем запрос как отклонённый
+            sender = notification.sender
+            receiver = notification.receiver
+
             notification.answer = False
             notification.save()
 
-            notif = m.Notification(name='Friends', description=f"{who} rejected your friend's request!", receiver=whom, sender=who)
-            notif.save() 
+            notif = m.Notification(name='Friends', description=f"{receiver} rejected your friend's request!", receiver=sender, sender=receiver)
+            notif.save()
 
-            notif = m.Notification(name='Friends', description=f"You rejected {whom}'s friend's request!", receiver=who, sender=whom)
-            notif.save() 
+            notif = m.Notification(name='Friends', description=f"You rejected {sender}'s friend's request!", receiver=receiver, sender=sender)
+            notif.save()
 
             return JsonResponse({'status': 'ok', 'message': 'Friend request rejected'})
         else:
@@ -72,9 +71,9 @@ def reject_friend_request(request, notification_id, whom, who):
 def delete_notification(request, pk):
     notif = get_object_or_404(m.Notification, id=pk)
 
-    if request.method == 'POST': 
+    if request.method == 'POST':
         notif.delete()
-        return redirect('notifications', user_id = request.user.id)  
+        return redirect('notifications', user_id = request.user.id)
 
     return redirect('notifications', user_id = request.user.id)
 

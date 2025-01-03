@@ -9,9 +9,8 @@ from django.http import JsonResponse
 from django.utils.timezone import now
 from datetime import timedelta
 from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 import os, json
-from django.db.models import Q
 
 def get_last_seen_text(user):
     if user.is_online:
@@ -49,7 +48,7 @@ def view_profile(request, user_id):
     user = CustomUser.objects.get(id=user_id)
     online = get_last_seen_text(user)
     posts = Post.objects.filter(creator=user.id)
-    
+
     notification = Notification.objects.filter(
         receiver=user,
         sender=request.user,
@@ -66,7 +65,7 @@ def view_profile(request, user_id):
     ).exists():
         notification = None
 
-    if notification and not request.user in user.friends.all():
+    if notification and notification.answer == None and not request.user in user.friends.all():
         status = 'Request has been sent'
     elif request.user in user.friends.all():
         status = 'Unfriend'
@@ -133,7 +132,7 @@ def be_friends(request, to_whom, from_whom):
         from_whom = CustomUser.objects.get(id=from_whom)
 
         if to_whom.friends.filter(id=from_whom.id).exists():
-            # Удаляем из друзей
+            # Delete from friends
             to_whom.friends.remove(from_whom)
             from_whom.friends.remove(to_whom)
 
@@ -178,14 +177,14 @@ def be_friends(request, to_whom, from_whom):
 
         layer = get_channel_layer()
         async_to_sync(layer.group_send)(
-            f"notification_user__{from_whom.id}",
+            f"notification_user_{from_whom.id}",
             {
                 "type": "send_notification",
                 'unread_count':from_whom.unread_notifications_count(),
             }
         )
         async_to_sync(layer.group_send)(
-            f"notification_user__{to_whom.id}",
+            f"notification_user_{to_whom.id}",
             {
                 "type": "send_notification",
                 'unread_count':to_whom.unread_notifications_count(),
@@ -217,12 +216,12 @@ def search_for_users(request):
         ).exists():
             notification = None
 
-        if notification and not request.user in user.friends.all():
+        if notification and notification.answer == None and not request.user in user.friends.all():
             users_[user] = 'Request has been sent'
         elif request.user in user.friends.all():
             users_[user] = 'Unfriend'
         else:
-            users_[user] = 'Friend'
+            users_[user] = 'Add Friend'
 
     return render(request, 'profile/search_results.html', {'users': users_, 'type': 'results of searching'})
 
@@ -249,12 +248,12 @@ def related_users(request, user_id, relation_type):
         ).exists():
             notification = None
 
-        if notification and not request.user in user.friends.all():
+        if notification and notification.answer == None and not request.user in user.friends.all():
             users_[user] = 'Request has been sent'
         elif request.user in user.friends.all():
             users_[user] = 'Unfriend'
         else:
-            users_[user] = 'Friend'
+            users_[user] = 'Add Friend'
 
     return render(request, 'profile/related_users.html', {'users': users_, 'type':relation_type})
 
@@ -293,18 +292,18 @@ def toggle_follow_user(request, user_id):
 
             layer = get_channel_layer()
             async_to_sync(layer.group_send)(
-                f"user_{user_to_toggle.id}",  # Группа по id получателя
+                f"notification_user_{user_to_toggle.id}",
                 {
-                    "type": "send_notification",  # тип события в consumers
-                    'unread_count':user_to_toggle.unread_notifications_count(),
+                    "type": "send_notification",
+                    'unread_count': user_to_toggle.unread_notifications_count(),
                 }
             )
 
             async_to_sync(layer.group_send)(
-                f"user_{current_user.id}",  # Группа по id получателя
+                f"notification_user_{current_user.id}",
                 {
-                    "type": "send_notification",  # тип события в consumers
-                    'unread_count':current_user.unread_notifications_count(),
+                    "type": "send_notification",
+                    'unread_count': current_user.unread_notifications_count(),
                 }
             )
 

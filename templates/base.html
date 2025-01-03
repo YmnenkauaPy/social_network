@@ -184,126 +184,138 @@
     }
 
     const userId = document.getElementById('user').value;
-    const chatListSocket = new WebSocket(`ws://${window.location.host}/ws/chat-list/`);
 
-    chatListSocket.onopen = function () {
-        console.log("WebSocket for chats is on");
-        chatListSocket.send(JSON.stringify({ type: "request_unread_counts" }));
-    };
+    if (userId && userId != 'None') {
+        const chatListSocket = new WebSocket(`ws://${window.location.host}/ws/chat-list/`);
 
-    chatListSocket.onmessage = function (e) {
-        const data = JSON.parse(e.data);
+        chatListSocket.onopen = function () {
+            chatListSocket.send(JSON.stringify({ type: "request_unread_counts" }));
+        };
 
-        if (data.type === "unread_counts") {
-            data.data.forEach(chat => {
-                const unreadBadge = document.getElementById(`unread_msgs_${chat.chat_id}`);
-                if (unreadBadge) {
-                    unreadBadge.innerHTML = chat.unread_count > 0 ? chat.unread_count : '';
+        chatListSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === "unread_counts") {
+                data.data.forEach(chat => {
+                    const unreadBadge = document.getElementById(`unread_msgs_${chat.chat_id}`);
+                    if (unreadBadge) {
+                        unreadBadge.innerHTML = chat.unread_count > 0 ? chat.unread_count : '';
+                    }
+
+                    const last_message = document.getElementById(`last_message_${chat.chat_id}`)
+                    if (last_message) {
+                        last_message.innerHTML = chat.last_message
+                    }
+                });
+
+                // Sum
+                const totalUnreadCount = data.data.reduce((sum, chat) => sum + chat.unread_count, 0);
+                const totalUnreadBadge = document.getElementById("unread-count-msg");
+                const totalUnreadBadge2 = document.getElementById("unread-count-msg2");
+
+                if (totalUnreadBadge) {
+                    totalUnreadBadge.style.display = totalUnreadCount > 0 ? "block" : "none";
+                    totalUnreadBadge.innerHTML = totalUnreadCount > 0 ? totalUnreadCount : '';
                 }
-            });
 
-            // Sum
-            const totalUnreadCount = data.data.reduce((sum, chat) => sum + chat.unread_count, 0);
-            const totalUnreadBadge = document.getElementById("unread-count-msg");
-            const totalUnreadBadge2 = document.getElementById("unread-count-msg2");
-
-            if (totalUnreadBadge) {
-                totalUnreadBadge.style.display = totalUnreadCount > 0 ? "block" : "none";
-                totalUnreadBadge.innerHTML = totalUnreadCount > 0 ? totalUnreadCount : '';
+                if (totalUnreadBadge2) {
+                    totalUnreadBadge2.style.display = totalUnreadCount > 0 ? "block" : "none";
+                    totalUnreadBadge2.innerHTML = totalUnreadCount > 0 ? totalUnreadCount : '';
+                }
             }
+        };
 
-            if (totalUnreadBadge2) {
-                totalUnreadBadge2.style.display = totalUnreadCount > 0 ? "block" : "none";
-                totalUnreadBadge2.innerHTML = totalUnreadCount > 0 ? totalUnreadCount : '';
-            }
-        }
-    };
+        const OnlineSocket = new WebSocket(
+            `ws://${window.location.host}/ws/user_status/${userId}/`
+        );
+        const NotificationsSocket = new WebSocket(`ws://${window.location.host}/ws/notifications/${userId}/`);
 
-    const NotificationsSocket = new WebSocket(`ws://${window.location.host}/ws/notifications/${userId}/`);
+        NotificationsSocket.onopen = () => {
+            NotificationsSocket.send(JSON.stringify({
+                type: "fetch_count"
+            }));
+        };
 
-    NotificationsSocket.onopen = () => {
-        NotificationsSocket.send(JSON.stringify({
-            type: "fetch_count"
-        }));
-    };
+        NotificationsSocket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            let unreadCountElement;
+            let unreadCountElement2;
 
-    const OnlineSocket = new WebSocket(
-        `ws://${window.location.host}/ws/user_status/${userId}/`
-    );
+            unreadCountElement = document.getElementById('unread-count');
+            unreadCountElement2 = document.getElementById('unread-count2');
 
-    NotificationsSocket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        let unreadCountElement;
-        let unreadCountElement2;
+            if (data.unread_count > 0 && data.event === 'notifications') {
+                const notificationList = document.getElementById('notification-list');
 
-        unreadCountElement = document.getElementById('unread-count');
-        unreadCountElement2 = document.getElementById('unread-count2');
+                if (notificationList) {
+                    const newNotification = document.createElement('li');
+                    newNotification.classList.add('notification-item', 'mb-3', 'p-3', 'border-bottom');
+                    newNotification.innerHTML = `
+                        <div class="notification-details">
+                            <h3 class="h5 mb-2">${data.name}</h3>
+                            <p>${data.description}</p>
+                            <small>${data.created_at}</small>
+                            <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal${data.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
 
-        if (data.unread_count > 0 && data.event === 'notifications') {
-            const notificationList = document.getElementById('notification-list');
-
-            if (notificationList) {
-                const newNotification = document.createElement('li');
-                newNotification.classList.add('notification-item', 'mb-3', 'p-3', 'border-bottom');
-                newNotification.innerHTML = `
-                    <div class="notification-details">
-                        <h3 class="h5 mb-2">${data.name}</h3>
-                        <p>${data.description}</p>
-                        <small>${data.created_at}</small>
-                        <button type="button" class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal${data.id}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-
-                        <!-- Модальное окно удаления -->
-                        <div class="modal fade" id="confirmDeleteModal${data.id}" tabindex="-1" aria-labelledby="confirmDeleteLabel${data.id}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="confirmDeleteLabel${data.id}">Confirm deletion</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to delete this notification? You can't undo it.
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <form action="/delete_notification/${data.id}/" method="POST">
-                                            <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
+                            <!-- Модальное окно удаления -->
+                            <div class="modal fade" id="confirmDeleteModal${data.id}" tabindex="-1" aria-labelledby="confirmDeleteLabel${data.id}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="confirmDeleteLabel${data.id}">Confirm deletion</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete this notification? You can't undo it.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="/delete_notification/${data.id}/" method="POST">
+                                                <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        ${
-                            data.show_accept_buttons
-                                ? `
-                                <form action="/accept_friend_request/${data.id}/" method="POST" class="accept-form">
-                                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
-                                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
-                                </form>
-                                <form action="/reject_friend_request/${data.id}/" method="POST" class="reject-form">
-                                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
-                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                </form>
-                            `
-                                : ''
-                        }
-                    </div>
-                `;
-                notificationList.prepend(newNotification);
+                            ${
+                                data.show_accept_buttons
+                                    ? `
+                                    <form action="/accept_friend_request/${data.id}/" method="POST" class="accept-form">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
+                                        <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                                    </form>
+                                    <form action="/reject_friend_request/${data.id}/" method="POST" class="reject-form">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
+                                        <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                    </form>
+                                `
+                                    : ''
+                            }
+                        </div>
+                    `;
+                    notificationList.prepend(newNotification);
+                }
             }
-        }
-        if (data.unread_count > 0) {
-            if (unreadCountElement) {
-                unreadCountElement.innerHTML = parseInt(unreadCountElement.innerHTML || '0');
+            if (data.unread_count > 0) {
+                const unreadCount = parseInt(data.unread_count || '0');
+
+                if (unreadCountElement) {
+                    unreadCountElement.innerHTML = unreadCount;
+                }
+
+                if (unreadCountElement2) {
+                    unreadCountElement2.innerHTML = unreadCount;
+                }
             }
-            if (unreadCountElement2) {
-                unreadCountElement2.innerHTML = unreadCountElement ? unreadCountElement.innerHTML : '0';
-            }
-        }
-    };
+        };
+
+    } else {
+        console.error("User ID is not available");
+    }
 
     async function toggleTheme() {
         const container = document.querySelector('.theme-light');

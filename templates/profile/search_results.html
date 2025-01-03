@@ -15,7 +15,9 @@
                 <div class="ml-auto d-flex">
                     <form action="{% url 'follow_user' custom_user.id %}" method="POST" class="follow-form" data-user-id="{{ custom_user.id }}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm follow-btn mr-3 mx-2">
+                        <button type="submit" class="btn
+                        {% if custom_user in request.user.followings.all %}btn-danger
+                        {% else %}btn-primary{% endif %} btn-sm follow-btn mr-3 mx-2">
                             {% if custom_user in user.followings.all %}
                                 Unfollow
                             {% else %}

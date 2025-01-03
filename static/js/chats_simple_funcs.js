@@ -4,6 +4,37 @@ function extractLinks(value) {
     return sanitizedValue.match(urlRegex) || [];
 }
 
+function formatContent(msg) {
+    let formattedContent = '';
+
+    const maxLength = 25;  // Set maximum characters per line
+    const words = msg.split(/(\s+)/);  // Split by spaces and keep spaces in the array
+    let currentLine = '';
+
+    for (const word of words) {
+        if (word.trim() === '') {
+            currentLine += word; 
+            continue;
+        }
+
+        // Check if adding the next word exceeds maxLength
+        if (currentLine.length + word.length > maxLength) {
+            if (currentLine.length > 0) {
+                formattedContent += currentLine + '<br>';  // Add the current line to formattedContent
+            }
+            currentLine = word;  // Start a new line with the current word
+        } else {
+            currentLine += word;  // Add the word to the current line
+        }
+    }
+
+    if (currentLine) {
+        formattedContent += currentLine;  // Add any remaining content
+    }
+
+    return formattedContent;
+}
+
 function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -11,8 +42,8 @@ function formatDate(dateString) {
     const isToday = date.toDateString() === now.toDateString();
     const isYesterday = new Date(now - 24 * 60 * 60 * 1000).toDateString() === date.toDateString();
 
-    const optionsTime = { hour: '2-digit', minute: '2-digit' }; // Формат времени (например, 14:30)
-    const optionsDate = { month: 'long', day: 'numeric', year: 'numeric' }; // Формат полной даты
+    const optionsTime = { hour: '2-digit', minute: '2-digit' }; // for example, 14:30
+    const optionsDate = { month: 'long', day: 'numeric', year: 'numeric' };
 
     if (isToday) {
         return `Today, ${date.toLocaleTimeString([], optionsTime)}`;
@@ -73,7 +104,6 @@ function previewImage(event) {
         .then(response => response.json())
         .then(data => {
             if (data.imageUrl) {
-                // Используйте imageUrl без изменений
                 previewImg.src = data.imageUrl;
             } else {
                 console.error("Image upload failed");
@@ -87,12 +117,11 @@ function previewImage(event) {
 
 
 function removeImage(event) {
-    console.log(event)
     const preview = document.getElementById('image-preview');
     const fileInput = document.getElementById('file-upload');
     const previewImg = document.getElementById('preview-img');
 
-    // Извлекаем путь без /media/
+    // Extract the path without /media/
     const relativePath = previewImg.src.split('/media/')[1];
 
     if (event == 'delete') {

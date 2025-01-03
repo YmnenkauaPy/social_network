@@ -15,7 +15,9 @@
                 <div class="ml-auto d-flex">
                     <form action="{% url 'follow_user' user.id %}" method="POST" class="follow-form" data-user-id="{{ user.id }}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm follow-btn mr-3 mx-2">
+                        <button type="submit" class="btn
+                            {% if user in request.user.followings.all %}btn-danger
+                            {% else %}btn-primary{% endif %} btn-sm follow-btn mr-3 mx-2">
                             {% if user in request.user.followings.all %}
                                 Unfollow
                             {% else %}
@@ -63,6 +65,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log('data', data)
                     if (data.status === 'ok') {
                         const button = this.querySelector('.follow-btn');
                         button.textContent = (data.follow_status === 'followed') ? 'Unfollow' : 'Follow';

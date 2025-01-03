@@ -3,49 +3,65 @@
 {% block content %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-    const passwordInput = document.getElementById('inputPassword');
-    const confirmPasswordInput = document.getElementById('inputConfirmPassword');
-    const passwordError = document.getElementById('passwordError');
+        const passwordInput = document.getElementById('inputPassword');
+        const confirmPasswordInput = document.getElementById('inputConfirmPassword');
+        const passwordError = document.getElementById('passwordError');
 
-    function validatePasswords() {
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            passwordError.style.display = 'block'; 
-        } else {
-            passwordError.style.display = 'none'; 
+        function validatePasswords() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                passwordError.style.display = 'block';
+            } else {
+                passwordError.style.display = 'none';
+            }
         }
-    }
 
-    passwordInput.addEventListener('input', validatePasswords);
-    confirmPasswordInput.addEventListener('input', validatePasswords);
-});
-
+        passwordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validatePasswords);
+    });
 </script>
-<body class="bg-primary" style="margin-top:20px">
+
+<body class="bg-dark text-white" style="margin-top:50px">
     <div id="layoutAuthentication">
         <div id="layoutAuthentication_content">
             <main>
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-7">
-                            <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                <div class="card-header">
-                                    <h3 class="text-center font-weight-light my-4">Create Account</h3>
+                <div class="container d-flex justify-content-center align-items-center" style="height: 100vh; margin-top: 50px;">
+                    <div class="row justify-content-center w-100">
+                        <div class="col-lg-6 col-md-8 col-sm-10">
+                            <div class="card shadow-lg border-0 rounded-lg">
+                                <div class="card-header text-center">
+                                    <h3 class="font-weight-light my-4">Create Account</h3>
                                 </div>
                                 <div class="card-body">
                                     <form method="POST" enctype="multipart/form-data">
                                         {% csrf_token %}
+
                                         {% if custom_user_form.errors %}
                                             <div class="alert alert-danger">
                                                 {{ custom_user_form.errors }}
                                             </div>
                                         {% endif %}
 
+                                        {% if error_message %}
+                                            <div class="alert alert-danger">
+                                                {{ error_message }}
+                                            </div>
+                                        {% endif %}
 
                                         <div class="row mb-3">
-                                            <div class="col-md-6">
+                                            <div class="col-md-12">
                                                 <div class="form-floating mb-3">
                                                     <input class="form-control" id="inputName" name="username" type="text" placeholder="Name" />
                                                     <label for="inputName">Name</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Добавляем поле для email -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <div class="form-floating mb-3">
+                                                    <input class="form-control" id="inputEmail" name="email" type="email" placeholder="Email" required />
+                                                    <label for="inputEmail">Email</label>
                                                 </div>
                                             </div>
                                         </div>
@@ -56,6 +72,8 @@
                                                     <input class="form-control" id="inputPassword" name="password" type="password" placeholder="Password" />
                                                     <label for="inputPassword">Password</label>
                                                 </div>
+                                            </div>
+                                            <div class="col-md-6">
                                                 <div class="form-floating mb-3">
                                                     <input class="form-control" id="inputConfirmPassword" name="confirm_password" type="password" placeholder="Confirm Password" />
                                                     <label for="inputConfirmPassword">Confirm Password</label>
@@ -64,10 +82,22 @@
                                                     Passwords do not match!
                                                 </div>
                                             </div>
-                                            <label for="inputProfilePicture">Profile Picture</label>
-                                            <div class="col-md-6">
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <label for="inputProfilePicture">Profile Picture</label>
                                                 <div class="form-floating mb-3">
-                                                    <input class="form-control" id="inputProfilePicture" name="profile_picture" type="file" placeholder="Upload Profile Picture" />
+                                                    <input class="form-control" id="inputProfilePicture" name="profile_picture" type="file" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <div class="form-floating mb-3">
+                                                    <textarea class="form-control" id="inputDetails" name="details" placeholder="Details" style="height: 100px;"></textarea>
+                                                    <label for="inputDetails">Details</label>
                                                 </div>
                                             </div>
                                         </div>
@@ -89,7 +119,7 @@
             </main>
         </div>
         <div id="layoutAuthentication_footer">
-            <footer class="py-4 bg-light mt-auto">
+            <footer class="py-4 bg-dark mt-auto">
                 <div class="container-fluid px-4">
                     <div class="d-flex align-items-center justify-content-between small">
                         <div class="text-muted">Copyright &copy; Your Website 2023</div>

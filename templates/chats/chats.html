@@ -3,7 +3,7 @@
 {% block content %}
 {% load static %}
 <input type="hidden" id="user" value="{{ request.user.id }}">
-<div id="user-data" data-avatar="{{ request.user.profile_picture.url }}" style="display: none;"></div>
+<div id="user-data" {% if request.user.profile_picture %}data-avatar="{{ request.user.profile_picture.url }}"{% else %}data-avatar="{% static 'images/None.png' %}"{% endif %} style="display: none;"></div>
 <div class="container-fluid mt-4">
     <div class="row">
         <!-- Left list of chats -->
@@ -14,21 +14,20 @@
                     <div class="card-body d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="card-title mb-1 text-muted">{{ chat.chat_name }}</h5>
-                            <p class="mb-0 text-muted small" id="last_message_{{chat.chat.id}}"
+                            <i class="mb-0 text-muted small" id="last_message_{{chat.chat.id}}"
                                content-value="{{chat.chat.last_message.content}}"
                                file-content-value="{% if chat.chat.last_message.file_content %}{{ chat.chat.last_message.file_content.url }}{% endif %}">
-                            </p>
+                            </i>
                         </div>
-                        {% if chat.unread > 0 %}
-                            <span class="badge bg-danger">{{ chat.unread }}</span>
-                        {% endif %}
+                        <div class="position-relative">
+                            <span class="badge bg-danger position-absolute top-0 end-0" id="unread_msgs_{{chat.chat.id}}">{% if chat.unread > 0 %}{{chat.unread}}{% endif %}</span>
+                        </div>
                     </div>
                 </a>
             {% empty %}
                 <p class="text-center text-muted mt-4">There are no chats</p>
             {% endfor %}
         </div>
-
         <!-- Right block -->
         <div class="col-md-8 d-flex justify-content-center align-items-center" style="height: 80vh;" id="chat-display">
             <p class="text-muted fs-4" id="select-chat-message">Select a chat to start messaging</p>
@@ -38,7 +37,7 @@
 
 <script src="{% static 'js/chats_simple_funcs.js' %}"></script>
 <script src="{% static 'js/chats_socket.js' %}">
-    const userAvatarUrl = "{{ request.user.profile_picture.url }}";
+    const userAvatarUrl = "{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}{% static 'images/None.png' %}{% endif %}";
 </script>
 
 {% endblock %}

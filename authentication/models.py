@@ -11,6 +11,7 @@ class CustomUser(AbstractUser):
     followings = models.ManyToManyField('self', symmetrical=False, related_name='followings_of_user', blank=True)
     followers = models.ManyToManyField('self', symmetrical=False, related_name='followers_of_user', blank=True)
     is_online = models.BooleanField(default=False)
+    email = models.EmailField()
     last_activity = models.DateTimeField(null=True, blank=True)
 
     def unread_notifications_count(self):

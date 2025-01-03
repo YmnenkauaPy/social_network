@@ -2,6 +2,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
 from .models import Chat
+from django.templatetags.static import static
 from chats.utils import notify_users_about_unread
 import json
 
@@ -80,7 +81,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         'sent_at': message.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
                         'sender_id': user.id,
                         'sender_name': user.username,
-                        'sender_profile_pic': user.profile_picture.url,
+                        'sender_profile_pic': user.profile_picture.url if user.profile_picture else static('images/None.png'),
                         'liked': int(liked),
                         'user_liked':user_liked,
                         'read':message.read,
@@ -188,12 +189,20 @@ class ChatListConsumer(AsyncWebsocketConsumer):
     async def send_unread_counts(self, chat_id=None):
         if chat_id:
             chat = await database_sync_to_async(Chat.objects.get)(id=chat_id)
-            unread_counts = [{'chat_id': chat.id,'unread_count': await chat.unread_count(self.user)}]
+            unread_counts = [{'chat_id': chat.id,'unread_count': await chat.unread_count(self.user), 'last_message': await sync_to_async(lambda: chat.last_message.content)()}]
         else:
             chats = await sync_to_async(list)(Chat.objects.filter(people=self.user))
 
             unread_counts = [
-                {"chat_id": chat.id, "unread_count": await chat.unread_count(self.user)}
+                {
+                    "chat_id": chat.id,
+                    "unread_count": await chat.unread_count(self.user),
+                    'last_message': await sync_to_async(
+                        lambda: (
+                            chat.last_message.content if chat.last_message and chat.last_message.content else "<b>photo</b>"
+                        ) if chat.last_message else "<b>no messages</b>"
+                    )()
+                }
                 for chat in chats
             ]
 
